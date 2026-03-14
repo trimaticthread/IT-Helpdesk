@@ -2,6 +2,7 @@
 
 > Universite odevi icin gelistirilen, N-Tier mimariye sahip destek talep yonetim sistemi.
 > Spotify mantigi: ayni backend, farkli arayuzler. Hem desktop hem web'den erisim.
+> > Günlük hayatta Jira Serverr Management ve Zammad sistemlerinden gördüğüm yapıları uyarlamaya çalıştım.
 
 ---
 
