@@ -11,12 +11,6 @@
 
     <artifactId>helpdesk-domain</artifactId>
 
-    <dependencies>
-        <!-- JPA Annotations (sadece annotation, framework degil) -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
-    </dependencies>
+    <!-- Hicbir bagimliligi yok. Saf Java POJO'lari, enum'lar ve exception'lar. -->
 
 </project>
