@@ -12,14 +12,12 @@
     <artifactId>helpdesk-application</artifactId>
 
     <dependencies>
-        <!-- Alt katman: domain -->
         <dependency>
             <groupId>com.helpdesk</groupId>
             <artifactId>helpdesk-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Alt katman: persistence -->
         <dependency>
             <groupId>com.helpdesk</groupId>
             <artifactId>helpdesk-persistence</artifactId>

@@ -12,20 +12,17 @@
     <artifactId>helpdesk-persistence</artifactId>
 
     <dependencies>
-        <!-- Alt katman: domain -->
         <dependency>
             <groupId>com.helpdesk</groupId>
             <artifactId>helpdesk-domain</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- JDBC ile veritabani islemleri — JPA/ORM yok, SQL elle yazilir -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-jdbc</artifactId>
         </dependency>
 
-        <!-- MySQL surucu -->
         <dependency>
             <groupId>com.mysql</groupId>
             <artifactId>mysql-connector-j</artifactId>

@@ -11,6 +11,4 @@
 
     <artifactId>helpdesk-domain</artifactId>
 
-    <!-- Hicbir bagimliligi yok. Saf Java POJO'lari, enum'lar ve exception'lar. -->
-
 </project>
