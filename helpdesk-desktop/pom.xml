@@ -12,21 +12,17 @@
     <artifactId>helpdesk-desktop</artifactId>
 
     <dependencies>
-        <!-- Alt katman: application (transitif olarak domain + persistence de gelir) -->
         <dependency>
             <groupId>com.helpdesk</groupId>
             <artifactId>helpdesk-application</artifactId>
             <version>${project.version}</version>
         </dependency>
 
-        <!-- Spring Boot temel bagimliliklari -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter</artifactId>
         </dependency>
 
-        <!-- Swing JDK icinde geliyor, ekstra dependency gerekmez -->
-        <!-- Oturum yonetimi icin Spring Security -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
             <artifactId>spring-boot-starter-security</artifactId>
