@@ -1,85 +1,44 @@
 package com.helpdesk.domain.entity;
 
-import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
  * Ticket'lara eklenen yorumlari ve notlari temsil eder.
- * Agent'lar ve musteriler ticket'a yorum ekleyebilir.
-
+ * Saf POJO — framework bagimliligi yok.
+ *
+ * is_internal = true ise sadece agent ve supervisor gorur (dahili not).
+ * is_internal = false ise musteri de dahil herkes gorur.
+ *
  * Iliskiler:
- * - Her yorum bir ticket'a aittir
- * - Her yorumu bir kullanici yazmistir
+ * - Her yorum bir ticket'a aittir (N:1)
+ * - Her yorumu bir kullanici yazmistir (N:1)
  */
-
-@Entity
-@Table(name = "comments")
 public class Comment {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @ManyToOne
-    @JoinColumn(name = "ticket_id", nullable = false)
     private Ticket ticket;
-
-    @ManyToOne
-    @JoinColumn(name = "author_id", nullable = false)
     private User author;
-
-    @Column(name = "content", nullable = false, columnDefinition = "TEXT")
     private String content;
-
-    @Column(name = "is_internal")
     private Boolean isInternal = false;
-
-    @Column(name = "created_at", updatable = false)
     private LocalDateTime createdAt;
 
     public Comment() {}
 
-    @PrePersist
-    protected void onCreate() {
-        this.createdAt = LocalDateTime.now();
-    }
+    public Long getId() { return id; }
+    public void setId(Long id) { this.id = id; }
 
-    // Getter ve Setter, Encapsulation
+    public Ticket getTicket() { return ticket; }
+    public void setTicket(Ticket ticket) { this.ticket = ticket; }
 
-    public Long getId() {
-        return id;
-    }public void setId(Long id) {
-        this.id = id;
-    }
+    public User getAuthor() { return author; }
+    public void setAuthor(User author) { this.author = author; }
 
-    public Ticket getTicket() {
-        return ticket;
-    } public void setTicket(Ticket ticket) {
-        this.ticket = ticket;
-    }
+    public String getContent() { return content; }
+    public void setContent(String content) { this.content = content; }
 
-    public User getAuthor() {
-        return author;
-    }public void setAuthor(User author) {
-        this.author = author;
-    }
+    public Boolean getIsInternal() { return isInternal; }
+    public void setIsInternal(Boolean isInternal) { this.isInternal = isInternal; }
 
-    public String getContent() {
-        return content;
-    } public void setContent(String content) {
-        this.content = content;
-    }
-
-    public Boolean getIsInternal() {
-        return isInternal;
-    }public void setIsInternal(Boolean isInternal) {
-        this.isInternal = isInternal;
-    }
-
-    public LocalDateTime getCreatedAt() {
-        return createdAt;
-    }public void setCreatedAt(LocalDateTime createdAt) {
-        this.createdAt = createdAt;
-    }
-
+    public LocalDateTime getCreatedAt() { return createdAt; }
+    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }
