@@ -71,7 +71,7 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public List<User> findByGroupId(Long groupId) {
-        String sql = "SELECT u.* FROM users u JOIN user_groups ug ON u.id = ug.user_id WHERE ug.group_id = ?";
+        String sql = "SELECT u.* FROM users u JOIN group_users gu ON u.id = gu.user_id WHERE gu.group_id = ?";
         return jdbcTemplate.query(sql, new UserRowMapper(), groupId);
     }
 
