@@ -11,12 +11,4 @@
 
     <artifactId>helpdesk-domain</artifactId>
 
-    <dependencies>
-        <!-- JPA Annotations (sadece annotation, framework degil) -->
-        <dependency>
-            <groupId>jakarta.persistence</groupId>
-            <artifactId>jakarta.persistence-api</artifactId>
-        </dependency>
-    </dependencies>
-
 </project>
