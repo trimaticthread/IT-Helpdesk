@@ -66,7 +66,7 @@ public class TicketServiceImpl implements TicketService {
         ticket.setTitle(request.getTitle());
         ticket.setDescription(request.getDescription());
         ticket.setStatus(TicketStatus.NEW);
-        ticket.setPriority(TicketPriority.valueOf(request.getPriority()));
+        ticket.setPriority(TicketPriority.valueOf(request.getPriority().toUpperCase()));
         ticket.setTicketNumber(generateTicketNumber());
 
         Category category = new Category();
