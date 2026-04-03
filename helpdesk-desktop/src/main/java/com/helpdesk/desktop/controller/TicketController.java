@@ -2,8 +2,10 @@ package com.helpdesk.desktop.controller;
 
 import com.helpdesk.application.dto.CreateTicketRequest;
 import com.helpdesk.application.dto.TicketDTO;
+import com.helpdesk.application.service.CategoryService;
 import com.helpdesk.application.service.TicketService;
 import com.helpdesk.desktop.security.SessionManager;
+import com.helpdesk.domain.entity.Category;
 import com.helpdesk.domain.enums.TicketStatus;
 import org.springframework.stereotype.Component;
 import java.util.List;
@@ -12,9 +14,15 @@ import java.util.List;
 public class TicketController {
 
     private final TicketService ticketService;
+    private final CategoryService categoryService;
 
-    public TicketController(TicketService ticketService) {
+    public TicketController(TicketService ticketService, CategoryService categoryService) {
         this.ticketService = ticketService;
+        this.categoryService = categoryService;
+    }
+
+    public List<Category> getCategories() {
+        return categoryService.findAllActive();
     }
 
     public List<TicketDTO> getAllTickets() {

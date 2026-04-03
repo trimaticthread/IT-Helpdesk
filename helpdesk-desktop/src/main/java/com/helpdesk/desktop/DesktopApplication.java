@@ -1,5 +1,6 @@
 package com.helpdesk.desktop;
 
+import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.view.LoginFrame;
@@ -23,6 +24,7 @@ public class DesktopApplication implements ApplicationRunner {
 
     public static void main(String[] args) {
         System.setProperty("java.awt.headless", "false");
+        FlatIntelliJLaf.setup();
         SpringApplication.run(DesktopApplication.class, args);
     }
 
