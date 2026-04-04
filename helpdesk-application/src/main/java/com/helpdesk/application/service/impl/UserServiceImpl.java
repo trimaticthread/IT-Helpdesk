@@ -57,6 +57,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public UserDTO createUser(UserDTO dto, String rawPassword, String roleName){
+        User user = UserMapper.toEntity(dto);
+        user.setPasswordHash(passwordEncoder.encode(rawPassword));
+        user.setIsActive(true);
+        User saved = userDAO.save(user);
+        userDAO.assignRole(saved.getId(), roleName);
+        return UserMapper.toDTO(saved);
+    }
+
+    @Override
     public void deleteById(Long id) {
         userDAO.deleteById(id);
     }
