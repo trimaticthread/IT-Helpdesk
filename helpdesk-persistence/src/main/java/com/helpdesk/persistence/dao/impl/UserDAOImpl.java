@@ -127,5 +127,10 @@ public class UserDAOImpl implements UserDAO {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
         return count != null && count > 0;
     }
+    @Override
+    public void assignRole(Long Id, String roleName) {
+        String sql = "INSERT INTO user_roles (user_id, role_id) SELECT ?, id FROM roles WHERE name = ?";
+        jdbcTemplate.update(sql, Id, roleName);
+    }
 }
 

@@ -20,4 +20,5 @@ public interface UserDAO {
 
     boolean existsByUsername(String username);
     boolean existsByEmail(String email);
+    void assignRole(Long Id, String roleName);
 }

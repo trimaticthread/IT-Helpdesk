@@ -9,19 +9,24 @@ import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
+
 import java.awt.*;
 import java.util.List;
+
+import com.helpdesk.desktop.controller.UserController;
 
 public class DashboardFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
+    private final UserController userController;
     private JTable ticketTable;
     private DefaultTableModel tableModel;
 
-    public DashboardFrame(AuthController authController, TicketController ticketController) {
+    public DashboardFrame(AuthController authController, TicketController ticketController, UserController userController) {
         this.authController = authController;
         this.ticketController = ticketController;
+        this.userController = userController;
         initUI();
         loadTickets();
     }
@@ -65,7 +70,7 @@ public class DashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -97,11 +102,21 @@ public class DashboardFrame extends JFrame {
         toolbar.add(newTicketButton);
         toolbar.add(refreshButton);
 
+        JButton usersButton = new JButton("Kullanicilar");
+        usersButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        usersButton.setFocusPainted(false);
+        usersButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        usersButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        usersButton.addActionListener(e -> new UserManagementFrame(userController).setVisible(true));
+        toolbar.add(usersButton);
+
         // Tablo
         String[] columns = {"Ticket No", "Baslik", "Durum", "Oncelik", "Kategori", "Tarih"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
-            public boolean isCellEditable(int row, int column) { return false; }
+            public boolean isCellEditable(int row, int column) {
+                return false;
+            }
         };
         ticketTable = new JTable(tableModel);
         ticketTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));

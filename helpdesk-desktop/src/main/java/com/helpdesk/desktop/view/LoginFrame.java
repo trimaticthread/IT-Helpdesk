@@ -2,6 +2,7 @@ package com.helpdesk.desktop.view;
 
 import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.TicketController;
+import com.helpdesk.desktop.controller.UserController;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -11,14 +12,16 @@ public class LoginFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
+    private final UserController userController;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JLabel errorLabel;
 
-    public LoginFrame(AuthController authController, TicketController ticketController) {
+    public LoginFrame(AuthController authController, TicketController ticketController, UserController userController) {
         this.authController = authController;
         this.ticketController = ticketController;
+        this.userController = userController;
         initUI();
     }
 
@@ -128,7 +131,7 @@ public class LoginFrame extends JFrame {
         boolean success = authController.login(username, password);
         if (success) {
             dispose();
-            DashboardFrame dashboard = new DashboardFrame(authController, ticketController);
+            DashboardFrame dashboard = new DashboardFrame(authController, ticketController, userController);
             dashboard.setVisible(true);
         } else {
             errorLabel.setText("Kullanici adi veya sifre yanlis.");
