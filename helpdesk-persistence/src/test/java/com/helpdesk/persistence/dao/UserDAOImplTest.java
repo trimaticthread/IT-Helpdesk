@@ -40,14 +40,14 @@ class UserDAOImplTest {
     }
 
     @Test
-    void kaydetme_ve_id_atama_calismali() {
+    void save_should_assign_generated_id() {
         User saved = userDAO.save(createTestUser("ahmet"));
         assertNotNull(saved.getId());
         assertTrue(saved.getId() > 0);
     }
 
     @Test
-    void id_ile_kullanici_bulunmali() {
+    void find_by_id_should_return_correct_user() {
         User saved = userDAO.save(createTestUser("mehmet"));
         Optional<User> found = userDAO.findById(saved.getId());
         assertTrue(found.isPresent());
@@ -55,20 +55,20 @@ class UserDAOImplTest {
     }
 
     @Test
-    void username_ile_kullanici_bulunmali() {
+    void find_by_username_should_return_user() {
         userDAO.save(createTestUser("ayse"));
         Optional<User> found = userDAO.findByUsername("ayse");
         assertTrue(found.isPresent());
     }
 
     @Test
-    void olmayan_kullanici_bos_donmeli() {
+    void find_by_nonexistent_id_should_return_empty() {
         Optional<User> found = userDAO.findById(999L);
         assertFalse(found.isPresent());
     }
 
     @Test
-    void tum_kullanicilar_listelenmeli() {
+    void find_all_should_return_all_saved_users() {
         userDAO.save(createTestUser("user1"));
         userDAO.save(createTestUser("user2"));
         List<User> all = userDAO.findAll();
@@ -76,16 +76,16 @@ class UserDAOImplTest {
     }
 
     @Test
-    void kullanici_silinmeli() {
-        User saved = userDAO.save(createTestUser("silinecek"));
+    void delete_by_id_should_remove_user() {
+        User saved = userDAO.save(createTestUser("to_be_deleted"));
         userDAO.deleteById(saved.getId());
         assertFalse(userDAO.findById(saved.getId()).isPresent());
     }
 
     @Test
-    void username_varlik_kontrolu_calismali() {
-        userDAO.save(createTestUser("varolan"));
-        assertTrue(userDAO.existsByUsername("varolan"));
-        assertFalse(userDAO.existsByUsername("olmayan"));
+    void exists_by_username_should_return_correct_result() {
+        userDAO.save(createTestUser("existing_user"));
+        assertTrue(userDAO.existsByUsername("existing_user"));
+        assertFalse(userDAO.existsByUsername("nonexistent_user"));
     }
 }

@@ -16,6 +16,19 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * {@link RoleDAO} arayüzünün JdbcTemplate tabanlı gerçekleştirimi.
+ *
+ * Kullanılan tablolar: {@code roles}, {@code user_roles} (JOIN)
+ *
+ * Tasarım notları:
+ * - {@code findByUserId()} user_roles join tablosu üzerinden çalışır;
+ *   doğrudan roles tablosunu sorgulamaz.
+ * - {@code save()} metodunda üretilen anahtar {@code GeneratedKeyHolder} ile alınır;
+ *   null kontrol edilerek {@link IllegalStateException} fırlatılır.
+ * - Roller genellikle sistem başlangıcında seed data olarak eklenir;
+ *   bu sınıf yönetim ekranı için de kullanılabilir.
+ */
 @Repository
 public class RoleDAOImpl implements RoleDAO {
 
@@ -25,6 +38,9 @@ public class RoleDAOImpl implements RoleDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * ResultSet satırını {@link Role} entity'sine dönüştürür.
+     */
     private static class RoleRowMapper implements RowMapper<Role>{
         @Override
         public Role mapRow(ResultSet rs, int rowNum) throws SQLException{
@@ -74,7 +90,9 @@ public class RoleDAOImpl implements RoleDAO {
             ps.setBoolean(3, role.getIsActive());
             return ps;
         }, keyHolder);
-        role.setId(keyHolder.getKey().longValue());
+        Number key = keyHolder.getKey();
+        if (key == null) throw new IllegalStateException("Role kaydedildi ama id alinamadi.");
+        role.setId(key.longValue());
         return role;
     }
 
