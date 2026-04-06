@@ -13,6 +13,21 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * UserDAO arayuzunun Spring JdbcTemplate tabanli gerceklemesi.
+ * Tum kullanici CRUD islemlerini raw SQL ile MySQL veritabaninda yurutur.
+ *
+ * Ic sinif:
+ * - UserRowMapper: ResultSet satirini User entity'sine donusturur.
+ *
+ * Onemli Notlar:
+ * - deleteById  : Once user_roles'dan siler, sonra users'dan.
+ *                 MySQL foreign key kisitlamasi bu siralamayi zorunlu kilar.
+ * - assignRole  : roles tablosunda name ile arama yapip user_roles'a ekler.
+ * - getRoleName : Bir kullanicinin ilk rolunu dondurur (LIMIT 1).
+ *                 Coklu rol gerekirse liste donecek sekilde genisletilebilir.
+ * - save        : GeneratedKeyHolder ile INSERT sonrasi otomatik id alir.
+ */
 @Repository
 public class UserDAOImpl implements UserDAO {
 
@@ -90,7 +105,9 @@ public class UserDAOImpl implements UserDAO {
             ps.setBoolean(8, user.getIsActive());
             return ps;
         }, keyHolder);
-        user.setId(keyHolder.getKey().longValue());
+        Number key = keyHolder.getKey();
+        if (key == null) throw new IllegalStateException("User kaydedildi ama id alinamadi.");
+        user.setId(key.longValue());
         return user;
     }
 
@@ -110,8 +127,8 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM users WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM user_roles WHERE user_id = ?", id);
+        jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
     }
 
     @Override
@@ -131,6 +148,13 @@ public class UserDAOImpl implements UserDAO {
     public void assignRole(Long Id, String roleName) {
         String sql = "INSERT INTO user_roles (user_id, role_id) SELECT ?, id FROM roles WHERE name = ?";
         jdbcTemplate.update(sql, Id, roleName);
+    }
+
+    @Override
+    public String getRoleName(Long userId) {
+        String sql = "SELECT r.name FROM roles r JOIN user_roles ur ON r.id = ur.role_id WHERE ur.user_id = ? LIMIT 1";
+        List<String> results = jdbcTemplate.queryForList(sql, String.class, userId);
+        return results.isEmpty() ? null : results.get(0);
     }
 }
 

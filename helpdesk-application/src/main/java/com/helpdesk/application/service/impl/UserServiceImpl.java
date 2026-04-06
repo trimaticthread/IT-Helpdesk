@@ -12,6 +12,19 @@ import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+/**
+ * Kullanici is mantigi servisinin gerceklemesi.
+ * CRUD islemlerini UserDAO araciligiyla yurutur ve BCrypt ile sifre hashler.
+ *
+ * Onemli Metodlar:
+ * - createUser : Yeni kullanici kaydeder ve aninda rol atar.
+ *                Admin paneli uzerinden kullanici olusturmak icin kullanilir.
+ * - save       : Mevcut DTO'dan kullanici olusturur, sifre hashler.
+ *                Rol atamasi yapmaz; bunun icin createUser kullanilmali.
+ * - update     : Kullanicinin kimlik/iletisim bilgilerini gunceller, sifre dokunulmaz.
+ * - deleteById : UserDAO uzerinden kullaniciyi siler.
+ *                FK siralama (user_roles once) UserDAOImpl icerisinde yonetilir.
+ */
 @Service
 public class UserServiceImpl implements UserService {
 

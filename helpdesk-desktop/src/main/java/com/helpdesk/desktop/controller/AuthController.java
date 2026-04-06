@@ -6,6 +6,15 @@ import com.helpdesk.desktop.security.SessionManager;
 import org.springframework.stereotype.Component;
 import java.util.Optional;
 
+/**
+ * Kimlik dogrulama islemlerini UI katmanindan servis katmanina aktaran kopru sinif.
+ * Swing view'lari AuthService'i dogrudan bilmez; bu controller araci gorevi gorur.
+ *
+ * Akis:
+ * - login()  : AuthService.login() cagirilir. Basarili olursa SessionManager'a
+ *              kullanici kaydedilir ve true dondurulur.
+ * - logout() : SessionManager.logout() ile aktif oturum temizlenir.
+ */
 @Component
 public class AuthController {
 
