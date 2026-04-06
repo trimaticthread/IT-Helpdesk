@@ -10,6 +10,17 @@ import com.helpdesk.domain.enums.TicketStatus;
 import org.springframework.stereotype.Component;
 import java.util.List;
 
+/**
+ * Ticket islemlerini UI katmanindan servis katmanina aktaran kopru sinif.
+ *
+ * Gorevler:
+ * - getAllTickets      : Tum ticketlari getirir. Admin ve Supervisor icin kullanilir.
+ * - getMyTickets       : Aktif kullanicinin olusturdugu ticketlari getirir (Customer icin).
+ * - getAssignedTickets : Aktif kullaniciya atanan ticketlari getirir (Agent icin).
+ * - createTicket       : Yeni ticket olusturur; requester olarak mevcut kullaniciyi atar.
+ * - updateStatus       : Seçilen ticketin durumunu gunceller.
+ * - getCategories      : Aktif kategorileri getirir; ticket formu dropdown'u icin kullanilir.
+ */
 @Component
 public class TicketController {
 
@@ -32,6 +43,11 @@ public class TicketController {
     public List<TicketDTO> getMyTickets() {
         Long userId = SessionManager.getCurrentUser().getId();
         return ticketService.findByRequesterId(userId);
+    }
+
+    public List<TicketDTO> getAssignedTickets() {
+        Long userId = SessionManager.getCurrentUser().getId();
+        return ticketService.findByAssigneeId(userId);
     }
 
     public TicketDTO createTicket(String title, String description, Long categoryId, String priority) {

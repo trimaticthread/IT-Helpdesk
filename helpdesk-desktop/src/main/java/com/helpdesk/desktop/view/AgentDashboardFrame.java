@@ -4,81 +4,75 @@ import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.security.SessionManager;
+import com.helpdesk.domain.enums.TicketStatus;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-
 import java.awt.*;
 import java.util.List;
 
-import com.helpdesk.desktop.controller.UserController;
-
 /**
- * ADMIN rolune ozel ana dashboard ekrani.
- * Sisteme tam erisim saglar: tum ticket'lari goruntuleme, yeni ticket olusturma
- * ve kullanici yonetimi panelini (UserManagementFrame) acma.
+ * AGENT rolune ozel dashboard ekrani.
+ * Agent yalnizca kendisine atanmis ticket'lari gorebilir.
+ * Ticket durumunu guncelleyebilir; kullanici yonetimine veya raporlara erisemez.
  *
  * Ozellikler:
- * - Tum ticket'lari JTable ile listeler (tum kullanicilarin talepleri).
- * - "+ Yeni Ticket" → CreateTicketDialog'u acar.
- * - "Kullanicilar"  → UserManagementFrame'i acar (kullanici ekle/duzenle/sil).
+ * - Yalnizca aktif agent'a atanmis ticket'lari listeler (findByAssigneeId).
+ * - "Change Status" butonu ile secili ticket'in durumu degistirilebilir.
+ * - Durum secenekleri: IN_PROGRESS, PENDING, RESOLVED, CLOSED.
  * - Ust barda hosgeldin mesaji ve cikis butonu bulunur.
- * - Cikis yapildiginda SessionManager temizlenir ve LoginFrame'e donulur.
  */
-public class DashboardFrame extends JFrame {
+public class AgentDashboardFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
-    private final UserController userController;
-    private JTable ticketTable;
     private DefaultTableModel tableModel;
+    private JTable ticketTable; // Seçili satırın ID'sini okumak için field'da tutulur
 
-    public DashboardFrame(AuthController authController, TicketController ticketController, UserController userController) {
+    public AgentDashboardFrame(AuthController authController, TicketController ticketController) {
         this.authController = authController;
         this.ticketController = ticketController;
-        this.userController = userController;
         initUI();
         loadTickets();
     }
 
     private void initUI() {
-        setTitle("IT Helpdesk");
-        setSize(1000, 640);
+        setTitle("IT Helpdesk — Agent");
+        setSize(960, 620);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Ekran ortasında aç
+        setLocationRelativeTo(null);
 
         // ─── ANA PANEL ───────────────────────────────────────────────────────
-        // Tüm ekranı dolduran ana container; kuzey=topBar+toolbar, merkez=tablo
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(new Color(245, 247, 250));
         setContentPane(root);
 
         // ─── ÜST BAR ─────────────────────────────────────────────────────────
-        // Koyu lacivert bar; sol=uygulama adı, sağ=kullanıcı adı + çıkış butonu
+        // Koyu bar; sol=başlık, sağ=kullanıcı adı + çıkış
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(new Color(30, 40, 60));
         topBar.setBorder(new EmptyBorder(12, 20, 12, 20));
 
-        // Uygulama logosu/adı — üst barın sol köşesi
-        JLabel appTitle = new JLabel("IT Helpdesk");
+        // Panel başlığı — hangi role ait olduğunu belirtir
+        JLabel appTitle = new JLabel("IT Helpdesk — Agent Panel");
         appTitle.setFont(new Font("Segoe UI", Font.BOLD, 16));
         appTitle.setForeground(Color.WHITE);
 
-        // Sağ üst köşe: hosgeldin + çıkış
+        // Sağ üst: kullanıcı adı + çıkış butonu
         JPanel rightTop = new JPanel(new FlowLayout(FlowLayout.RIGHT, 12, 0));
         rightTop.setOpaque(false);
 
-        // Oturum açmış kullanıcının tam adını gösterir (SessionManager'dan çekilir)
+        // Oturum açmış agent'ın tam adı
         String name = SessionManager.getCurrentUser() != null
-                ? SessionManager.getCurrentUser().getFullName() : "Kullanici";
-        JLabel welcomeLabel = new JLabel("Hosgeldin, " + name);
+                ? SessionManager.getCurrentUser().getFullName() : "Agent";
+        JLabel welcomeLabel = new JLabel("Welcome, " + name);
         welcomeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         welcomeLabel.setForeground(new Color(180, 190, 210));
 
-        // Çıkış butonu — oturumu kapatır ve LoginFrame'e döner
-        JButton logoutButton = new JButton("Cikis");
+        // Çıkış butonu — oturumu sona erdirir
+        JButton logoutButton = new JButton("Logout");
         logoutButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         logoutButton.setBackground(new Color(60, 70, 95));
         logoutButton.setForeground(Color.WHITE);
@@ -86,9 +80,9 @@ public class DashboardFrame extends JFrame {
         logoutButton.setBorder(BorderFactory.createEmptyBorder(6, 14, 6, 14));
         logoutButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         logoutButton.addActionListener(e -> {
-            authController.logout(); // SessionManager temizlenir
+            authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController).setVisible(true);
+            new LoginFrame(authController, ticketController, null).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -97,79 +91,71 @@ public class DashboardFrame extends JFrame {
         topBar.add(rightTop, BorderLayout.EAST);
 
         // ─── ARAÇ ÇUBUĞU ─────────────────────────────────────────────────────
-        // Üst barın hemen altında; tablo işlem butonları soldan sıralanır
         JPanel toolbar = new JPanel(new FlowLayout(FlowLayout.LEFT, 10, 10));
         toolbar.setBackground(new Color(245, 247, 250));
         toolbar.setBorder(new EmptyBorder(4, 12, 0, 12));
 
-        // Yeni ticket butonu — CreateTicketDialog modal penceresini açar
-        JButton newTicketButton = new JButton("+ Yeni Ticket");
-        newTicketButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
-        newTicketButton.setBackground(new Color(41, 98, 255)); // Mavi vurgu rengi
-        newTicketButton.setForeground(Color.WHITE);
-        newTicketButton.setFocusPainted(false);
-        newTicketButton.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
-        newTicketButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        newTicketButton.addActionListener(e -> openCreateTicketDialog());
-
-        // Yenile butonu — ticket tablosunu veritabanından tekrar yükler
-        JButton refreshButton = new JButton("Yenile");
+        // Yenile butonu — atanan ticket listesini tekrar yükler
+        JButton refreshButton = new JButton("Refresh");
         refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         refreshButton.setFocusPainted(false);
         refreshButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
         refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> loadTickets());
 
-        toolbar.add(newTicketButton);
-        toolbar.add(refreshButton);
+        // Durum değiştir butonu — tabloda satır seçilmeden devre dışı kalır
+        // Tıklanınca JOptionPane ile yeni durum seçilir
+        JButton changeStatusButton = new JButton("Change Status");
+        changeStatusButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        changeStatusButton.setFocusPainted(false);
+        changeStatusButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        changeStatusButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        changeStatusButton.setEnabled(false); // Başlangıçta pasif
+        changeStatusButton.addActionListener(e -> openChangeStatusDialog());
 
-        // Kullanıcılar butonu — ADMIN'e özel; UserManagementFrame'i açar
-        JButton usersButton = new JButton("Kullanicilar");
-        usersButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        usersButton.setFocusPainted(false);
-        usersButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-        usersButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        usersButton.addActionListener(e -> new UserManagementFrame(userController).setVisible(true));
-        toolbar.add(usersButton);
+        toolbar.add(refreshButton);
+        toolbar.add(changeStatusButton);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
-        // Tüm ticket'ları listeler; hücreler düzenlenemez (isCellEditable=false)
-        String[] columns = {"Ticket No", "Baslik", "Durum", "Oncelik", "Kategori", "Tarih"};
+        // ID kolonu gizlidir; sadece seçili satırın ticket ID'sini almak için saklanır
+        String[] columns = {"ID", "Ticket No", "Title", "Status", "Priority", "Category", "Date"};
         tableModel = new DefaultTableModel(columns, 0) {
-            @Override
-            public boolean isCellEditable(int row, int column) {
-                return false; // Tabloda direkt düzenlemeyi engeller
-            }
+            @Override public boolean isCellEditable(int row, int col) { return false; }
         };
+
         ticketTable = new JTable(tableModel);
         ticketTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        ticketTable.setRowHeight(32);        // Her satır 32px yüksekliğinde
-        ticketTable.setShowGrid(false);      // Izgara çizgileri gizlenir
+        ticketTable.setRowHeight(32);
+        ticketTable.setShowGrid(false);
         ticketTable.setIntercellSpacing(new Dimension(0, 0));
-        ticketTable.setSelectionBackground(new Color(220, 230, 255)); // Seçili satır açık mavi
-        ticketTable.setSelectionForeground(new Color(30, 40, 60));
+        ticketTable.setSelectionBackground(new Color(220, 230, 255));
         ticketTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         ticketTable.getTableHeader().setBackground(new Color(235, 238, 245));
         ticketTable.getTableHeader().setForeground(new Color(80, 90, 110));
-        ticketTable.getTableHeader().setBorder(BorderFactory.createEmptyBorder(0, 8, 0, 8));
 
-        // Her sütunun piksel genişliği: Ticket No, Başlık, Durum, Öncelik, Kategori, Tarih
-        int[] widths = {120, 260, 90, 80, 130, 100};
-        for (int i = 0; i < widths.length; i++) {
+        // ID kolonu (index 0) gizlenir — kullanıcı görmez ama kod okuyabilir
+        ticketTable.getColumnModel().getColumn(0).setMinWidth(0);
+        ticketTable.getColumnModel().getColumn(0).setMaxWidth(0);
+        ticketTable.getColumnModel().getColumn(0).setWidth(0);
+
+        // Görünen sütun genişlikleri: Ticket No, Başlık, Durum, Öncelik, Kategori, Tarih
+        int[] widths = {0, 110, 240, 100, 80, 130, 100};
+        for (int i = 1; i < widths.length; i++) {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Hücre renderer: sol padding + zebra (dönüşümlü) satır renklendirmesi
+        // Tablo seçim dinleyicisi — satır seçilirse "Change Status" aktif olur
+        ticketTable.getSelectionModel().addListSelectionListener(e ->
+                changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
+
+        // Zebra satır renklendirmesi
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
-                    boolean isSelected, boolean hasFocus, int row, int column) {
-                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column);
-                setBorder(new EmptyBorder(0, 10, 0, 10)); // Sol/sağ 10px boşluk
-                if (!isSelected) {
-                    // Çift satır beyaz, tek satır çok açık mavi-gri
-                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
-                }
+                    boolean isSelected, boolean hasFocus, int row, int col) {
+                super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
+                setBorder(new EmptyBorder(0, 10, 0, 10));
+                if (!isSelected) setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
                 return this;
             }
         };
@@ -177,12 +163,10 @@ public class DashboardFrame extends JFrame {
             ticketTable.getColumnModel().getColumn(i).setCellRenderer(cellRenderer);
         }
 
-        // Tablo için scroll desteği — büyük listelerde kaydırma yapılabilir
         JScrollPane scrollPane = new JScrollPane(ticketTable);
         scrollPane.setBorder(BorderFactory.createEmptyBorder());
         scrollPane.getViewport().setBackground(Color.WHITE);
 
-        // Tablo kartı — kenarlık ve boşlukla çevrelenmiş beyaz alan
         JPanel tableCard = new JPanel(new BorderLayout());
         tableCard.setBackground(Color.WHITE);
         tableCard.setBorder(BorderFactory.createCompoundBorder(
@@ -192,33 +176,53 @@ public class DashboardFrame extends JFrame {
         tableCard.add(scrollPane, BorderLayout.CENTER);
 
         // ─── PANEL BİRLEŞTİRME ───────────────────────────────────────────────
-        // northPanel: topBar (NORTH) + toolbar (SOUTH) → root'un kuzeyine eklenir
         JPanel northPanel = new JPanel(new BorderLayout());
         northPanel.setOpaque(false);
         northPanel.add(topBar, BorderLayout.NORTH);
         northPanel.add(toolbar, BorderLayout.SOUTH);
 
         root.add(northPanel, BorderLayout.NORTH);
-        root.add(tableCard, BorderLayout.CENTER); // Tablo ekranın geri kalanını doldurur
+        root.add(tableCard, BorderLayout.CENTER);
     }
 
-    private void openCreateTicketDialog() {
-        CreateTicketDialog dialog = new CreateTicketDialog(this, ticketController);
-        dialog.setVisible(true);
-        if (dialog.isSubmitted()) {
-            loadTickets();
+    /**
+     * Seçili ticket'ın durumunu değiştirmek için JOptionPane açar.
+     * Seçilen status TicketController.updateStatus() ile kaydedilir.
+     */
+    private void openChangeStatusDialog() {
+        int row = ticketTable.getSelectedRow();
+        if (row == -1) return;
+        // Gizli ID kolunundan (index 0) ticket ID'si okunur
+        Long ticketId = (Long) tableModel.getValueAt(row, 0);
+
+        // Mevcut durum seçenekleri — Agent NEW ve OPEN yapamaZ
+        TicketStatus[] options = {
+            TicketStatus.IN_PROGRESS, TicketStatus.PENDING,
+            TicketStatus.RESOLVED, TicketStatus.CLOSED
+        };
+        TicketStatus selected = (TicketStatus) JOptionPane.showInputDialog(
+                this, "Select new status:", "Change Status",
+                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+
+        if (selected != null) {
+            try {
+                ticketController.updateStatus(ticketId, selected);
+                loadTickets(); // Güncelleme sonrası tabloyu yenile
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
         }
     }
 
     private void loadTickets() {
-        List<TicketDTO> tickets = ticketController.getAllTickets();
+        // Sadece bu agent'a atanmış ticket'lar çekilir (assigneeId = mevcut kullanıcı)
+        List<TicketDTO> tickets = ticketController.getAssignedTickets();
         tableModel.setRowCount(0);
         for (TicketDTO t : tickets) {
             tableModel.addRow(new Object[]{
-                t.getTicketNumber(),
-                t.getTitle(),
-                t.getStatus(),
-                t.getPriority(),
+                t.getId(),           // Gizli ID kolonu
+                t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
                 t.getCategoryName(),
                 t.getCreatedAt() != null ? t.getCreatedAt().toLocalDate().toString() : ""
             });
