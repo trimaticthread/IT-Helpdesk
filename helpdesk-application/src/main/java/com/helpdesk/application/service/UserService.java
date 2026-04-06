@@ -19,4 +19,6 @@ public interface UserService {
     void deleteById(Long id);
 
     boolean existsByUsername(String username);
+
+    UserDTO createUser(UserDTO dto, String rawPassword, String roleName);
 }
