@@ -27,6 +27,10 @@ public class CustomerDashboardFrame extends JFrame {
     private final AuthController authController;
     private final TicketController ticketController;
     private DefaultTableModel tableModel;
+    // Secili satirin ticket ID'sini okumak icin field olarak tutulur
+    private JTable ticketTable;
+    // Ticket listesi — ViewTicketDialog'a DTO gecmek icin hafizada tutulur
+    private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
 
     public CustomerDashboardFrame(AuthController authController, TicketController ticketController) {
         this.authController = authController;
@@ -122,7 +126,7 @@ public class CustomerDashboardFrame extends JFrame {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
 
-        JTable ticketTable = new JTable(tableModel);
+        ticketTable = new JTable(tableModel);
         ticketTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         ticketTable.setRowHeight(32);
         ticketTable.setShowGrid(false);
@@ -131,6 +135,24 @@ public class CustomerDashboardFrame extends JFrame {
         ticketTable.getTableHeader().setFont(new Font("Segoe UI", Font.BOLD, 12));
         ticketTable.getTableHeader().setBackground(new Color(235, 238, 245));
         ticketTable.getTableHeader().setForeground(new Color(80, 90, 110));
+
+        // Cift tiklamada ViewTicketDialog acilir — secili satirin DTO'su gecirilir
+        ticketTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = ticketTable.getSelectedRow();
+                    if (row >= 0 && row < currentTickets.size()) {
+                        new ViewTicketDialog(
+                                CustomerDashboardFrame.this,
+                                currentTickets.get(row),
+                                ticketController
+                        ).setVisible(true);
+                        loadTickets(); // dialog kapaninca listeyi yenile
+                    }
+                }
+            }
+        });
 
         // Sütun genişlikleri: Ticket No, Başlık, Durum, Öncelik, Kategori, Tarih
         int[] widths = {120, 260, 90, 80, 130, 100};
@@ -184,10 +206,10 @@ public class CustomerDashboardFrame extends JFrame {
     }
 
     private void loadTickets() {
-        // Sadece bu müşteriye ait ticket'lar çekilir (requesterId = mevcut kullanıcı)
-        List<TicketDTO> tickets = ticketController.getMyTickets();
+        // Sadece bu müşteriye ait, CLOSED olmayan ticket'lar çekilir
+        currentTickets = ticketController.getMyTickets();
         tableModel.setRowCount(0); // Tabloyu sıfırla
-        for (TicketDTO t : tickets) {
+        for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
                 t.getCategoryName(),

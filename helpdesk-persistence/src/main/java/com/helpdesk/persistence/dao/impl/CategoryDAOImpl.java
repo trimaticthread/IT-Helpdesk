@@ -15,6 +15,18 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * {@link CategoryDAO} arayüzünün JdbcTemplate tabanlı gerçekleştirimi.
+ *
+ * Kullanılan tablo: {@code categories}
+ *
+ * Tasarım notları:
+ * - Tüm sorgular parametreli PreparedStatement kullanır; SQL injection riski yoktur.
+ * - {@code save()} metodunda üretilen anahtar {@code GeneratedKeyHolder} ile alınır;
+ *   null kontrol edilerek {@link IllegalStateException} fırlatılır.
+ * - {@code findAllActive()} yalnızca {@code is_active = true} kayıtları getirir;
+ *   ticket formu dropdown'larında kullanılır.
+ */
 @Repository
 public class CategoryDAOImpl implements CategoryDAO {
 
@@ -24,6 +36,9 @@ public class CategoryDAOImpl implements CategoryDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * ResultSet satırını {@link Category} entity'sine dönüştürür.
+     */
     private static class CategoryRowMapper implements RowMapper<Category> {
         @Override
         public Category mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -73,7 +88,9 @@ public class CategoryDAOImpl implements CategoryDAO {
             ps.setBoolean(3, category.getIsActive());
             return ps;
         }, keyHolder);
-        category.setId(keyHolder.getKey().longValue());
+        Number key = keyHolder.getKey();
+        if (key == null) throw new IllegalStateException("Category kaydedildi ama id alinamadi.");
+        category.setId(key.longValue());
         return category;
     }
 

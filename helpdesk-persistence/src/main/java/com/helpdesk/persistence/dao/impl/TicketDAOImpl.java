@@ -20,6 +20,21 @@ import java.sql.Statement;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * {@link TicketDAO} arayüzünün JdbcTemplate tabanlı gerçekleştirimi.
+ *
+ * Kullanılan tablo: {@code tickets}
+ * İlişkili tablolar: {@code users} (requester/assignee), {@code categories}, {@code groups_}
+ *
+ * Tasarım notları:
+ * - RowMapper yalnızca ID'leri set eder (shallow load); tam ad / kategori adı gibi
+ *   ilişki alanları {@link com.helpdesk.application.mapper.TicketMapper} tarafından
+ *   servis katmanında JOIN veya ayrı sorgu ile doldurulur.
+ * - assignee_id ve group_id nullable — rs.wasNull() ile kontrol edilir.
+ * - Tüm listeleme sorguları {@code ORDER BY created_at DESC} ile en yeni önce gelir.
+ * - {@code save()} metodunda üretilen anahtar {@code GeneratedKeyHolder} ile alınır;
+ *   null kontrol edilerek {@link IllegalStateException} fırlatılır.
+ */
 @Repository
 public class TicketDAOImpl implements TicketDAO {
 
@@ -29,6 +44,11 @@ public class TicketDAOImpl implements TicketDAO {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    /**
+     * ResultSet satırını {@link Ticket} entity'sine dönüştürür.
+     * Nullable alanlar (assignee_id, group_id, timestamp'lar) null kontrolü
+     * ile set edilir; NPE riski yoktur.
+     */
     private static class TicketRowMapper implements RowMapper<Ticket> {
         @Override
         public Ticket mapRow(ResultSet rs, int rowNum) throws SQLException {
@@ -146,7 +166,9 @@ public class TicketDAOImpl implements TicketDAO {
             else ps.setNull(9, java.sql.Types.BIGINT);
             return ps;
         }, keyHolder);
-        ticket.setId(keyHolder.getKey().longValue());
+        Number key = keyHolder.getKey();
+        if (key == null) throw new IllegalStateException("Ticket kaydedildi ama id alinamadi.");
+        ticket.setId(key.longValue());
         return ticket;
     }
 
