@@ -1,5 +1,13 @@
 package com.helpdesk.application.service.impl;
 
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.helpdesk.application.dto.CreateTicketRequest;
 import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.mapper.TicketMapper;
@@ -11,12 +19,6 @@ import com.helpdesk.domain.enums.TicketPriority;
 import com.helpdesk.domain.enums.TicketStatus;
 import com.helpdesk.domain.exception.ResourceNotFoundException;
 import com.helpdesk.persistence.dao.TicketDAO;
-import org.springframework.stereotype.Service;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 @Service
 public class TicketServiceImpl implements TicketService {
@@ -84,10 +86,25 @@ public class TicketServiceImpl implements TicketService {
     @Override
     public TicketDTO updateStatus(Long ticketId, TicketStatus newStatus) {
         Ticket ticket = ticketDAO.findById(ticketId)
-                .orElseThrow(() -> new ResourceNotFoundException("Ticket bulunamadi: " + ticketId));
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
         ticket.setStatus(newStatus);
-        if (newStatus == TicketStatus.RESOLVED) ticket.setResolvedAt(LocalDateTime.now());
-        if (newStatus == TicketStatus.CLOSED) ticket.setClosedAt(LocalDateTime.now());
+        if (newStatus == TicketStatus.RESOLVED) {
+            ticket.setResolvedAt(LocalDateTime.now());
+        }
+        if (newStatus == TicketStatus.CLOSED) {
+            ticket.setClosedAt(LocalDateTime.now());
+        }
+        ticketDAO.update(ticket);
+        return TicketMapper.toDTO(ticket);
+    }
+
+    @Override
+    public TicketDTO assignTicket(Long ticketId, Long agentId) {
+        Ticket ticket = ticketDAO.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
+        User agent = new User();
+        agent.setId(agentId);
+        ticket.setAssignee(agent);
         ticketDAO.update(ticket);
         return TicketMapper.toDTO(ticket);
     }

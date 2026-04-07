@@ -52,4 +52,8 @@ public class UserDTO {
 
     public String getRole() { return role; }
     public void setRole(String role) { this.role = role; }
+
+    /** JOptionPane dropdown'larında agent adının düzgün görünmesi için */
+    @Override
+    public String toString() { return getFullName(); }
 }

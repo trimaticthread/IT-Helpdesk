@@ -38,6 +38,8 @@ public class SupervisorDashboardFrame extends JFrame {
     private DefaultTableModel tableModel;
     private JTable ticketTable;
     private JPanel reportsPanel; // Reports sekmesi içeriği buraya eklenir/sıfırlanır
+    // ViewTicketDialog ve Assign Ticket için DTO listesi hafızada tutulur
+    private java.util.List<TicketDTO> currentTickets = new java.util.ArrayList<>();
 
     public SupervisorDashboardFrame(AuthController authController,
                                     TicketController ticketController,
@@ -145,8 +147,18 @@ public class SupervisorDashboardFrame extends JFrame {
         changeStatusButton.setEnabled(false); // Başta pasif
         changeStatusButton.addActionListener(e -> openChangeStatusDialog());
 
+        // Ticket atama butonu — seçili ticket'ı bir agent'a atar
+        JButton assignButton = new JButton("Assign Ticket");
+        assignButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        assignButton.setFocusPainted(false);
+        assignButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        assignButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        assignButton.setEnabled(false); // Satır seçilmeden pasif kalır
+        assignButton.addActionListener(e -> openAssignDialog());
+
         toolbar.add(refreshButton);
         toolbar.add(changeStatusButton);
+        toolbar.add(assignButton);
         panel.add(toolbar, BorderLayout.NORTH);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
@@ -177,9 +189,31 @@ public class SupervisorDashboardFrame extends JFrame {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Satır seçilince "Change Status" aktif olur
-        ticketTable.getSelectionModel().addListSelectionListener(e ->
-                changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
+        // Satır seçilince "Change Status" ve "Assign Ticket" aktif olur
+        ticketTable.getSelectionModel().addListSelectionListener(e -> {
+            boolean selected = ticketTable.getSelectedRow() != -1;
+            changeStatusButton.setEnabled(selected);
+            assignButton.setEnabled(selected);
+        });
+
+        // Çift tıklamada ViewTicketDialog açılır — supervisor agent gibi dahili yorumları görebilir
+        ticketTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = ticketTable.getSelectedRow();
+                    if (row >= 0 && row < currentTickets.size()) {
+                        new ViewTicketDialog(
+                                SupervisorDashboardFrame.this,
+                                currentTickets.get(row),
+                                ticketController,
+                                true  // isAgent=true: dahili yorumlar görünür
+                        ).setVisible(true);
+                        loadTickets();
+                    }
+                }
+            }
+        });
 
         // Zebra satır renklendirmesi
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
@@ -330,13 +364,54 @@ public class SupervisorDashboardFrame extends JFrame {
         }
     }
 
+    /**
+     * Seçili ticket'ı bir agent'a atamak için dialog açar.
+     * Agent listesi TicketController.getAgents() üzerinden çekilir.
+     * Seçilen agent TicketController.assignTicket() ile kaydedilir.
+     */
+    private void openAssignDialog() {
+        int row = ticketTable.getSelectedRow();
+        if (row == -1) return;
+        Long ticketId = (Long) tableModel.getValueAt(row, 0); // Gizli ID kolonu
+
+        // AGENT rolündeki aktif kullanıcılar dropdown'a yüklenir
+        List<com.helpdesk.application.dto.UserDTO> agents = ticketController.getAgents();
+        if (agents.isEmpty()) {
+            JOptionPane.showMessageDialog(this,
+                    "No active agents found in the system.",
+                    "No Agents", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
+        // Agent seçim dropdown'u — UserDTO.getFullName() gösterilir
+        com.helpdesk.application.dto.UserDTO selected =
+                (com.helpdesk.application.dto.UserDTO) JOptionPane.showInputDialog(
+                        this,
+                        "Select agent to assign:",
+                        "Assign Ticket",
+                        JOptionPane.PLAIN_MESSAGE,
+                        null,
+                        agents.toArray(),
+                        agents.get(0));
+
+        if (selected != null) {
+            try {
+                ticketController.assignTicket(ticketId, selected.getId());
+                loadTickets();
+            } catch (Exception ex) {
+                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
+                        "Error", JOptionPane.ERROR_MESSAGE);
+            }
+        }
+    }
+
     private void loadTickets() {
         // Sistemdeki tüm ticket'lar çekilir (supervisor tümünü görebilir)
-        List<TicketDTO> tickets = ticketController.getAllTickets();
+        currentTickets = ticketController.getAllTickets();
         tableModel.setRowCount(0);
-        for (TicketDTO t : tickets) {
+        for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
-                t.getId(),           // Gizli ID kolonu
+                t.getId(),            // Gizli ID kolonu — Change Status ve Assign Ticket için
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
                 t.getRequesterName(), // Kimin talep açtığını gösterir
                 t.getCategoryName(),
