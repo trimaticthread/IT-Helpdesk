@@ -24,30 +24,42 @@ import java.util.Optional;
  * {@link TicketDAO} arayüzünün JdbcTemplate tabanlı gerçekleştirimi.
  *
  * Kullanılan tablo: {@code tickets}
- * İlişkili tablolar: {@code users} (requester/assignee), {@code categories}, {@code groups_}
+ * İlişkili tablolar: {@code users} (requester/assignee JOIN), {@code categories} (JOIN)
  *
  * Tasarım notları:
- * - RowMapper yalnızca ID'leri set eder (shallow load); tam ad / kategori adı gibi
- *   ilişki alanları {@link com.helpdesk.application.mapper.TicketMapper} tarafından
- *   servis katmanında JOIN veya ayrı sorgu ile doldurulur.
- * - assignee_id ve group_id nullable — rs.wasNull() ile kontrol edilir.
- * - Tüm listeleme sorguları {@code ORDER BY created_at DESC} ile en yeni önce gelir.
- * - {@code save()} metodunda üretilen anahtar {@code GeneratedKeyHolder} ile alınır;
- *   null kontrol edilerek {@link IllegalStateException} fırlatılır.
+ * - Listeleme sorguları (findAll, findByRequesterId, findByAssigneeId) users ve
+ *   categories tablolarını JOIN eder; TicketMapper'ın ad/kategori alanlarını
+ *   doldurabilmesi için entity üzerine firstName/lastName/categoryName set edilir.
+ * - assignee_id nullable — LEFT JOIN + rs.wasNull() ile güvenli okunur.
+ * - findById / findByTicketNumber tek kayıt sorgularında da JOIN kullanılır
+ *   (updateStatus ve assignTicket sonrası dönen DTO'nun adları dolu olsun diye).
+ * - deleteById: FK kısıtlaması nedeniyle önce comments, sonra tickets silinir.
+ * - save() metodunda üretilen anahtar GeneratedKeyHolder ile alınır; null kontrolü yapılır.
  */
 @Repository
 public class TicketDAOImpl implements TicketDAO {
 
     private final JdbcTemplate jdbcTemplate;
 
+    // Tüm listeleme sorgularında kullanılan JOIN SQL şablonu
+    private static final String SELECT_FULL =
+            "SELECT t.*, " +
+            "       req.first_name AS req_first, req.last_name AS req_last, " +
+            "       asgn.first_name AS asgn_first, asgn.last_name AS asgn_last, " +
+            "       cat.name AS cat_name " +
+            "FROM tickets t " +
+            "JOIN users req ON t.requester_id = req.id " +
+            "LEFT JOIN users asgn ON t.assignee_id = asgn.id " +
+            "JOIN categories cat ON t.category_id = cat.id ";
+
     public TicketDAOImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
     }
 
     /**
-     * ResultSet satırını {@link Ticket} entity'sine dönüştürür.
-     * Nullable alanlar (assignee_id, group_id, timestamp'lar) null kontrolü
-     * ile set edilir; NPE riski yoktur.
+     * JOIN sorgularında kullanılan zengin RowMapper.
+     * requester firstName/lastName, assignee firstName/lastName ve category name
+     * alanlarını da entity'e yazar; TicketMapper.toDTO() bu alanları DTO'ya aktarır.
      */
     private static class TicketRowMapper implements RowMapper<Ticket> {
         @Override
@@ -71,19 +83,27 @@ public class TicketDAOImpl implements TicketDAO {
             if (rs.getTimestamp("sla_due_date") != null)
                 ticket.setSlaDueDate(rs.getTimestamp("sla_due_date").toLocalDateTime());
 
+            // Requester — JOIN ile adı da gelir
             User requester = new User();
             requester.setId(rs.getLong("requester_id"));
+            requester.setFirstName(rs.getString("req_first"));
+            requester.setLastName(rs.getString("req_last"));
             ticket.setRequester(requester);
 
+            // Assignee — LEFT JOIN; atanmamışsa null bırakılır
             long assigneeId = rs.getLong("assignee_id");
             if (!rs.wasNull()) {
                 User assignee = new User();
                 assignee.setId(assigneeId);
+                assignee.setFirstName(rs.getString("asgn_first"));
+                assignee.setLastName(rs.getString("asgn_last"));
                 ticket.setAssignee(assignee);
             }
 
+            // Category — JOIN ile adı da gelir
             Category category = new Category();
             category.setId(rs.getLong("category_id"));
+            category.setName(rs.getString("cat_name"));
             ticket.setCategory(category);
 
             long groupId = rs.getLong("group_id");
@@ -99,57 +119,60 @@ public class TicketDAOImpl implements TicketDAO {
 
     @Override
     public Optional<Ticket> findById(Long id) {
-        String sql = "SELECT * FROM tickets WHERE id = ?";
+        String sql = SELECT_FULL + "WHERE t.id = ?";
         List<Ticket> result = jdbcTemplate.query(sql, new TicketRowMapper(), id);
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
     public Optional<Ticket> findByTicketNumber(String ticketNumber) {
-        String sql = "SELECT * FROM tickets WHERE ticket_number = ?";
+        String sql = SELECT_FULL + "WHERE t.ticket_number = ?";
         List<Ticket> result = jdbcTemplate.query(sql, new TicketRowMapper(), ticketNumber);
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     @Override
     public List<Ticket> findAll() {
-        String sql = "SELECT * FROM tickets ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper());
     }
 
     @Override
     public List<Ticket> findByRequesterId(Long requesterId) {
-        String sql = "SELECT * FROM tickets WHERE requester_id = ? ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "WHERE t.requester_id = ? ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper(), requesterId);
     }
 
     @Override
     public List<Ticket> findByAssigneeId(Long assigneeId) {
-        String sql = "SELECT * FROM tickets WHERE assignee_id = ? ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "WHERE t.assignee_id = ? ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper(), assigneeId);
     }
 
     @Override
     public List<Ticket> findByStatus(TicketStatus status) {
-        String sql = "SELECT * FROM tickets WHERE status = ? ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "WHERE t.status = ? ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper(), status.name());
     }
 
     @Override
     public List<Ticket> findByGroupId(Long groupId) {
-        String sql = "SELECT * FROM tickets WHERE group_id = ? ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "WHERE t.group_id = ? ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper(), groupId);
     }
 
     @Override
     public List<Ticket> findByCategoryId(Long categoryId) {
-        String sql = "SELECT * FROM tickets WHERE category_id = ? ORDER BY created_at DESC";
+        String sql = SELECT_FULL + "WHERE t.category_id = ? ORDER BY t.created_at DESC";
         return jdbcTemplate.query(sql, new TicketRowMapper(), categoryId);
     }
 
     @Override
     public Ticket save(Ticket ticket) {
-        String sql = "INSERT INTO tickets (ticket_number, title, description, status, priority, category_id, requester_id, assignee_id, group_id, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+        String sql = "INSERT INTO tickets " +
+                "(ticket_number, title, description, status, priority, category_id, " +
+                "requester_id, assignee_id, group_id, created_at, updated_at) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -174,7 +197,8 @@ public class TicketDAOImpl implements TicketDAO {
 
     @Override
     public void update(Ticket ticket) {
-        String sql = "UPDATE tickets SET title=?, description=?, status=?, priority=?, category_id=?, assignee_id=?, group_id=?, updated_at=NOW() WHERE id=?";
+        String sql = "UPDATE tickets SET title=?, description=?, status=?, priority=?, " +
+                "category_id=?, assignee_id=?, group_id=?, updated_at=NOW() WHERE id=?";
         jdbcTemplate.update(sql,
                 ticket.getTitle(),
                 ticket.getDescription(),
@@ -186,9 +210,14 @@ public class TicketDAOImpl implements TicketDAO {
                 ticket.getId());
     }
 
+    /**
+     * Ticket'ı kalıcı olarak siler.
+     * FK kısıtlaması nedeniyle önce bu ticket'a ait comments silinir,
+     * ardından ticket kaydı kaldırılır.
+     */
     @Override
     public void deleteById(Long id) {
-        String sql = "DELETE FROM tickets WHERE id = ?";
-        jdbcTemplate.update(sql, id);
+        jdbcTemplate.update("DELETE FROM comments WHERE ticket_id = ?", id);
+        jdbcTemplate.update("DELETE FROM tickets WHERE id = ?", id);
     }
 }

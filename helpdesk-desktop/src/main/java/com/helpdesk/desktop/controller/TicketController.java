@@ -64,9 +64,10 @@ public class TicketController {
 
     public List<TicketDTO> getAssignedTickets() {
         Long userId = SessionManager.getCurrentUser().getId();
+        // RESOLVED ve CLOSED ticket'lar agent ekranından gizlenir
         return ticketService.findByAssigneeId(userId)
                 .stream()
-                .filter(t -> !"CLOSED".equals(t.getStatus()))
+                .filter(t -> !"CLOSED".equals(t.getStatus()) && !"RESOLVED".equals(t.getStatus()))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -75,9 +76,8 @@ public class TicketController {
     }
 
     public List<UserDTO> getAgents() {
-        return userService.findAll().stream()
-                .filter(u -> "AGENT".equals(u.getRole()))
-                .collect(Collectors.toList());
+        // findByRole: DB'de role_name filtreli sorgu — UserMapper role set etmediği için stream filter yetersiz
+        return userService.findByRole("AGENT");
     }
 
     public TicketDTO createTicket(String title, String description, Long categoryId, String priority) {
@@ -100,5 +100,9 @@ public class TicketController {
 
     public TicketDTO assignTicket(Long ticketId, Long agentId) {
         return ticketService.assignTicket(ticketId, agentId);
+    }
+
+    public void deleteTicket(Long ticketId) {
+        ticketService.deleteById(ticketId);
     }
 }
