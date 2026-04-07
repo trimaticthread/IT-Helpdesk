@@ -30,6 +30,8 @@ public class AgentDashboardFrame extends JFrame {
     private final TicketController ticketController;
     private DefaultTableModel tableModel;
     private JTable ticketTable; // Seçili satırın ID'sini okumak için field'da tutulur
+    // ViewTicketDialog'a DTO geçmek için hafızada tutulur
+    private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
 
     public AgentDashboardFrame(AuthController authController, TicketController ticketController) {
         this.authController = authController;
@@ -95,6 +97,20 @@ public class AgentDashboardFrame extends JFrame {
         toolbar.setBackground(new Color(245, 247, 250));
         toolbar.setBorder(new EmptyBorder(4, 12, 0, 12));
 
+        // Yeni ticket butonu — agent da ticket oluşturabilir (CreateTicketDialog)
+        JButton newTicketButton = new JButton("+ New Ticket");
+        newTicketButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        newTicketButton.setBackground(new Color(41, 98, 255));
+        newTicketButton.setForeground(Color.WHITE);
+        newTicketButton.setFocusPainted(false);
+        newTicketButton.setBorder(BorderFactory.createEmptyBorder(8, 18, 8, 18));
+        newTicketButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        newTicketButton.addActionListener(e -> {
+            CreateTicketDialog dialog = new CreateTicketDialog(this, ticketController);
+            dialog.setVisible(true);
+            if (dialog.isSubmitted()) loadTickets();
+        });
+
         // Yenile butonu — atanan ticket listesini tekrar yükler
         JButton refreshButton = new JButton("Refresh");
         refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -113,6 +129,7 @@ public class AgentDashboardFrame extends JFrame {
         changeStatusButton.setEnabled(false); // Başlangıçta pasif
         changeStatusButton.addActionListener(e -> openChangeStatusDialog());
 
+        toolbar.add(newTicketButton);
         toolbar.add(refreshButton);
         toolbar.add(changeStatusButton);
 
@@ -147,6 +164,26 @@ public class AgentDashboardFrame extends JFrame {
         // Tablo seçim dinleyicisi — satır seçilirse "Change Status" aktif olur
         ticketTable.getSelectionModel().addListSelectionListener(e ->
                 changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
+
+        // Çift tıklamada ViewTicketDialog açılır — agent modu (isAgent=true)
+        // Dahili yorumlar görünür + "Internal note" checkbox aktif
+        ticketTable.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseClicked(java.awt.event.MouseEvent e) {
+                if (e.getClickCount() == 2) {
+                    int row = ticketTable.getSelectedRow();
+                    if (row >= 0 && row < currentTickets.size()) {
+                        new ViewTicketDialog(
+                                AgentDashboardFrame.this,
+                                currentTickets.get(row),
+                                ticketController,
+                                true  // isAgent=true: dahili yorumlar + internal checkbox
+                        ).setVisible(true);
+                        loadTickets();
+                    }
+                }
+            }
+        });
 
         // Zebra satır renklendirmesi
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
@@ -217,9 +254,9 @@ public class AgentDashboardFrame extends JFrame {
 
     private void loadTickets() {
         // Sadece bu agent'a atanmış ticket'lar çekilir (assigneeId = mevcut kullanıcı)
-        List<TicketDTO> tickets = ticketController.getAssignedTickets();
+        currentTickets = ticketController.getAssignedTickets();
         tableModel.setRowCount(0);
-        for (TicketDTO t : tickets) {
+        for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
                 t.getId(),           // Gizli ID kolonu
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),

@@ -1,32 +1,32 @@
 package com.helpdesk.persistence.dao.impl;
 
-import com.helpdesk.domain.entity.User;
-import com.helpdesk.persistence.dao.UserDAO;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
-import org.springframework.jdbc.support.GeneratedKeyHolder;
-import org.springframework.jdbc.support.KeyHolder;
-import org.springframework.stereotype.Repository;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.List;
 import java.util.Optional;
 
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
+import org.springframework.jdbc.support.GeneratedKeyHolder;
+import org.springframework.jdbc.support.KeyHolder;
+import org.springframework.stereotype.Repository;
+
+import com.helpdesk.domain.entity.User;
+import com.helpdesk.persistence.dao.UserDAO;
+
 /**
- * UserDAO arayuzunun Spring JdbcTemplate tabanli gerceklemesi.
- * Tum kullanici CRUD islemlerini raw SQL ile MySQL veritabaninda yurutur.
+ * UserDAO arayuzunun Spring JdbcTemplate tabanli gerceklemesi. Tum kullanici
+ * CRUD islemlerini raw SQL ile MySQL veritabaninda yurutur.
  *
- * Ic sinif:
- * - UserRowMapper: ResultSet satirini User entity'sine donusturur.
+ * Ic sinif: - UserRowMapper: ResultSet satirini User entity'sine donusturur.
  *
- * Onemli Notlar:
- * - deleteById  : Once user_roles'dan siler, sonra users'dan.
- *                 MySQL foreign key kisitlamasi bu siralamayi zorunlu kilar.
- * - assignRole  : roles tablosunda name ile arama yapip user_roles'a ekler.
- * - getRoleName : Bir kullanicinin ilk rolunu dondurur (LIMIT 1).
- *                 Coklu rol gerekirse liste donecek sekilde genisletilebilir.
- * - save        : GeneratedKeyHolder ile INSERT sonrasi otomatik id alir.
+ * Onemli Notlar: - deleteById : Once user_roles'dan siler, sonra users'dan.
+ * MySQL foreign key kisitlamasi bu siralamayi zorunlu kilar. - assignRole :
+ * roles tablosunda name ile arama yapip user_roles'a ekler. - getRoleName : Bir
+ * kullanicinin ilk rolunu dondurur (LIMIT 1). Coklu rol gerekirse liste donecek
+ * sekilde genisletilebilir. - save : GeneratedKeyHolder ile INSERT sonrasi
+ * otomatik id alir.
  */
 @Repository
 public class UserDAOImpl implements UserDAO {
@@ -38,6 +38,7 @@ public class UserDAOImpl implements UserDAO {
     }
 
     private static class UserRowMapper implements RowMapper<User> {
+
         @Override
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
             User user = new User();
@@ -106,7 +107,9 @@ public class UserDAOImpl implements UserDAO {
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
-        if (key == null) throw new IllegalStateException("User kaydedildi ama id alinamadi.");
+        if (key == null) {
+            throw new IllegalStateException("User kaydedildi ama id alinamadi.");
+        }
         user.setId(key.longValue());
         return user;
     }
@@ -144,6 +147,7 @@ public class UserDAOImpl implements UserDAO {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, email);
         return count != null && count > 0;
     }
+
     @Override
     public void assignRole(Long Id, String roleName) {
         String sql = "INSERT INTO user_roles (user_id, role_id) SELECT ?, id FROM roles WHERE name = ?";
@@ -156,5 +160,15 @@ public class UserDAOImpl implements UserDAO {
         List<String> results = jdbcTemplate.queryForList(sql, String.class, userId);
         return results.isEmpty() ? null : results.get(0);
     }
-}
 
+    @Override
+    public List<User> findByRoleName(String roleName) {
+        // user_roles ve roles tabloları join edilerek verilen role sahip aktif kullanıcılar döner
+        String sql = "SELECT u.* FROM users u " +
+                     "JOIN user_roles ur ON u.id = ur.user_id " +
+                     "JOIN roles r ON r.id = ur.role_id " +
+                     "WHERE r.name = ? AND u.is_active = true";
+        return jdbcTemplate.query(sql, new UserRowMapper(), roleName);
+    }
+
+}
