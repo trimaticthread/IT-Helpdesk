@@ -88,4 +88,11 @@ public class UserServiceImpl implements UserService {
     public boolean existsByUsername(String username) {
         return userDAO.existsByUsername(username);
     }
+
+    @Override
+    public List<UserDTO> findByRole(String roleName) {
+        return userDAO.findByRoleName(roleName).stream()
+                .map(UserMapper::toDTO)
+                .collect(Collectors.toList());
+    }
 }

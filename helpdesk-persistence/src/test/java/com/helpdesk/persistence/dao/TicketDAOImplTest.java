@@ -50,7 +50,7 @@ class TicketDAOImplTest {
         testUser = userDAO.save(user);
 
         Category category = new Category();
-        category.setName("Test Kategori");
+        category.setName("Test Category");
         category.setIsActive(true);
         testCategory = categoryDAO.save(category);
     }
@@ -59,7 +59,7 @@ class TicketDAOImplTest {
         Ticket ticket = new Ticket();
         ticket.setTicketNumber(ticketNumber);
         ticket.setTitle("Test Ticket");
-        ticket.setDescription("Test açıklaması");
+        ticket.setDescription("Test description");
         ticket.setStatus(TicketStatus.NEW);
         ticket.setPriority(TicketPriority.MEDIUM);
         ticket.setRequester(testUser);
@@ -68,14 +68,14 @@ class TicketDAOImplTest {
     }
 
     @Test
-    void kaydetme_ve_id_atama_calismali() {
+    void save_should_assign_generated_id() {
         Ticket saved = ticketDAO.save(createTestTicket("TKT-001"));
         assertNotNull(saved.getId());
         assertTrue(saved.getId() > 0);
     }
 
     @Test
-    void id_ile_ticket_bulunmali() {
+    void find_by_id_should_return_correct_ticket() {
         Ticket saved = ticketDAO.save(createTestTicket("TKT-002"));
         Optional<Ticket> found = ticketDAO.findById(saved.getId());
         assertTrue(found.isPresent());
@@ -83,7 +83,7 @@ class TicketDAOImplTest {
     }
 
     @Test
-    void ticket_number_ile_ticket_bulunmali() {
+    void find_by_ticket_number_should_return_correct_ticket() {
         ticketDAO.save(createTestTicket("TKT-003"));
         Optional<Ticket> found = ticketDAO.findByTicketNumber("TKT-003");
         assertTrue(found.isPresent());
@@ -91,13 +91,13 @@ class TicketDAOImplTest {
     }
 
     @Test
-    void olmayan_ticket_bos_donmeli() {
+    void find_by_nonexistent_id_should_return_empty() {
         Optional<Ticket> found = ticketDAO.findById(999L);
         assertFalse(found.isPresent());
     }
 
     @Test
-    void requester_id_ile_ticketlar_listelenmeli() {
+    void find_by_requester_id_should_return_all_requester_tickets() {
         ticketDAO.save(createTestTicket("TKT-004"));
         ticketDAO.save(createTestTicket("TKT-005"));
         List<Ticket> tickets = ticketDAO.findByRequesterId(testUser.getId());
@@ -105,7 +105,7 @@ class TicketDAOImplTest {
     }
 
     @Test
-    void status_ile_ticketlar_filtrelenmeli() {
+    void find_by_status_should_return_only_matching_tickets() {
         ticketDAO.save(createTestTicket("TKT-006"));
         List<Ticket> newTickets = ticketDAO.findByStatus(TicketStatus.NEW);
         assertFalse(newTickets.isEmpty());
@@ -113,19 +113,19 @@ class TicketDAOImplTest {
     }
 
     @Test
-    void ticket_guncellenmeli() {
+    void update_should_persist_changed_fields() {
         Ticket saved = ticketDAO.save(createTestTicket("TKT-007"));
-        saved.setTitle("Guncellenmis Baslik");
+        saved.setTitle("Updated Title");
         saved.setStatus(TicketStatus.IN_PROGRESS);
         ticketDAO.update(saved);
         Optional<Ticket> updated = ticketDAO.findById(saved.getId());
         assertTrue(updated.isPresent());
-        assertEquals("Guncellenmis Baslik", updated.get().getTitle());
+        assertEquals("Updated Title", updated.get().getTitle());
         assertEquals(TicketStatus.IN_PROGRESS, updated.get().getStatus());
     }
 
     @Test
-    void ticket_silinmeli() {
+    void delete_by_id_should_remove_ticket() {
         Ticket saved = ticketDAO.save(createTestTicket("TKT-008"));
         ticketDAO.deleteById(saved.getId());
         assertFalse(ticketDAO.findById(saved.getId()).isPresent());
