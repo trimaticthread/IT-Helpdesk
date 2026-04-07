@@ -21,4 +21,7 @@ public interface UserService {
     boolean existsByUsername(String username);
 
     UserDTO createUser(UserDTO dto, String rawPassword, String roleName);
+
+    /** Verilen role sahip aktif kullanicilari dondurur. */
+    List<UserDTO> findByRole(String roleName);
 }

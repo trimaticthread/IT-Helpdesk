@@ -130,6 +130,15 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public void deleteById(Long id) {
+        // FK silme sırası: comments → tickets (assignee null) → tickets (requester) → user_roles → users
+        // 1. Kullanıcının yazdığı yorumları sil
+        jdbcTemplate.update("DELETE FROM comments WHERE author_id = ?", id);
+        // 2. Kullanıcının açtığı ticketlara ait yorumları sil, sonra ticketları sil
+        jdbcTemplate.update("DELETE FROM comments WHERE ticket_id IN (SELECT id FROM tickets WHERE requester_id = ?)", id);
+        jdbcTemplate.update("DELETE FROM tickets WHERE requester_id = ?", id);
+        // 3. Kullanıcıya atanmış ticketlardan atamasını kaldır (silme değil — ticket korunur)
+        jdbcTemplate.update("UPDATE tickets SET assignee_id = NULL WHERE assignee_id = ?", id);
+        // 4. Rol bağlantısını sil, ardından kullanıcıyı sil
         jdbcTemplate.update("DELETE FROM user_roles WHERE user_id = ?", id);
         jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
     }

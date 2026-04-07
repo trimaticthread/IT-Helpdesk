@@ -1,41 +1,57 @@
 package com.helpdesk.desktop.view;
 
-import com.helpdesk.application.dto.TicketDTO;
-import com.helpdesk.desktop.controller.AuthController;
-import com.helpdesk.desktop.controller.TicketController;
-import com.helpdesk.desktop.security.SessionManager;
-import com.helpdesk.domain.enums.TicketStatus;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.util.List;
+
+import com.helpdesk.application.dto.TicketDTO;
+import com.helpdesk.desktop.controller.AuthController;
+import com.helpdesk.desktop.controller.TicketController;
+import com.helpdesk.desktop.controller.UserController;
+import com.helpdesk.desktop.security.SessionManager;
+import com.helpdesk.domain.enums.TicketStatus;
 
 /**
- * AGENT rolune ozel dashboard ekrani.
- * Agent yalnizca kendisine atanmis ticket'lari gorebilir.
- * Ticket durumunu guncelleyebilir; kullanici yonetimine veya raporlara erisemez.
+ * AGENT rolune ozel dashboard ekrani. Agent yalnizca kendisine atanmis
+ * ticket'lari gorebilir. Ticket durumunu guncelleyebilir; kullanici yonetimine
+ * veya raporlara erisemez.
  *
- * Ozellikler:
- * - Yalnizca aktif agent'a atanmis ticket'lari listeler (findByAssigneeId).
- * - "Change Status" butonu ile secili ticket'in durumu degistirilebilir.
- * - Durum secenekleri: IN_PROGRESS, PENDING, RESOLVED, CLOSED.
- * - Ust barda hosgeldin mesaji ve cikis butonu bulunur.
+ * Ozellikler: - Yalnizca aktif agent'a atanmis ticket'lari listeler
+ * (findByAssigneeId). - "Change Status" butonu ile secili ticket'in durumu
+ * degistirilebilir. - Durum secenekleri: IN_PROGRESS, PENDING, RESOLVED,
+ * CLOSED. - Ust barda hosgeldin mesaji ve cikis butonu bulunur.
  */
 public class AgentDashboardFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
+    private final UserController userController;
     private DefaultTableModel tableModel;
     private JTable ticketTable; // Seçili satırın ID'sini okumak için field'da tutulur
     // ViewTicketDialog'a DTO geçmek için hafızada tutulur
     private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
 
-    public AgentDashboardFrame(AuthController authController, TicketController ticketController) {
+    public AgentDashboardFrame(AuthController authController, TicketController ticketController,
+                               UserController userController) {
         this.authController = authController;
         this.ticketController = ticketController;
+        this.userController = userController;
         initUI();
         loadTickets();
     }
@@ -84,7 +100,7 @@ public class AgentDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, null).setVisible(true);
+            new LoginFrame(authController, ticketController, userController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -108,7 +124,9 @@ public class AgentDashboardFrame extends JFrame {
         newTicketButton.addActionListener(e -> {
             CreateTicketDialog dialog = new CreateTicketDialog(this, ticketController);
             dialog.setVisible(true);
-            if (dialog.isSubmitted()) loadTickets();
+            if (dialog.isSubmitted()) {
+                loadTickets();
+            }
         });
 
         // Yenile butonu — atanan ticket listesini tekrar yükler
@@ -137,7 +155,10 @@ public class AgentDashboardFrame extends JFrame {
         // ID kolonu gizlidir; sadece seçili satırın ticket ID'sini almak için saklanır
         String[] columns = {"ID", "Ticket No", "Title", "Status", "Priority", "Category", "Date"};
         tableModel = new DefaultTableModel(columns, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
 
         ticketTable = new JTable(tableModel);
@@ -162,8 +183,8 @@ public class AgentDashboardFrame extends JFrame {
         }
 
         // Tablo seçim dinleyicisi — satır seçilirse "Change Status" aktif olur
-        ticketTable.getSelectionModel().addListSelectionListener(e ->
-                changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
+        ticketTable.getSelectionModel().addListSelectionListener(e
+                -> changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
 
         // Çift tıklamada ViewTicketDialog açılır — agent modu (isAgent=true)
         // Dahili yorumlar görünür + "Internal note" checkbox aktif
@@ -177,7 +198,7 @@ public class AgentDashboardFrame extends JFrame {
                                 AgentDashboardFrame.this,
                                 currentTickets.get(row),
                                 ticketController,
-                                true  // isAgent=true: dahili yorumlar + internal checkbox
+                                true // isAgent=true: dahili yorumlar + internal checkbox
                         ).setVisible(true);
                         loadTickets();
                     }
@@ -192,7 +213,9 @@ public class AgentDashboardFrame extends JFrame {
                     boolean isSelected, boolean hasFocus, int row, int col) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
-                if (!isSelected) setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                if (!isSelected) {
+                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                }
                 return this;
             }
         };
@@ -223,19 +246,21 @@ public class AgentDashboardFrame extends JFrame {
     }
 
     /**
-     * Seçili ticket'ın durumunu değiştirmek için JOptionPane açar.
-     * Seçilen status TicketController.updateStatus() ile kaydedilir.
+     * Seçili ticket'ın durumunu değiştirmek için JOptionPane açar. Seçilen
+     * status TicketController.updateStatus() ile kaydedilir.
      */
     private void openChangeStatusDialog() {
         int row = ticketTable.getSelectedRow();
-        if (row == -1) return;
+        if (row == -1) {
+            return;
+        }
         // Gizli ID kolunundan (index 0) ticket ID'si okunur
         Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
-        // Mevcut durum seçenekleri — Agent NEW ve OPEN yapamaZ
+        // Agent IN_PROGRESS, PENDING ve RESOLVED yapabilir.
+        // RESOLVED seçilince ticket agent ekranından kaybolur (supervisor/admin tarafında görünür).
         TicketStatus[] options = {
-            TicketStatus.IN_PROGRESS, TicketStatus.PENDING,
-            TicketStatus.RESOLVED, TicketStatus.CLOSED
+            TicketStatus.IN_PROGRESS, TicketStatus.PENDING, TicketStatus.RESOLVED
         };
         TicketStatus selected = (TicketStatus) JOptionPane.showInputDialog(
                 this, "Select new status:", "Change Status",
@@ -258,7 +283,7 @@ public class AgentDashboardFrame extends JFrame {
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
-                t.getId(),           // Gizli ID kolonu
+                t.getId(), // Gizli ID kolonu
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
                 t.getCategoryName(),
                 t.getCreatedAt() != null ? t.getCreatedAt().toLocalDate().toString() : ""

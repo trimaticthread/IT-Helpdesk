@@ -1,40 +1,55 @@
 package com.helpdesk.desktop.view;
 
-import com.helpdesk.application.dto.TicketDTO;
-import com.helpdesk.desktop.controller.AuthController;
-import com.helpdesk.desktop.controller.TicketController;
-import com.helpdesk.desktop.security.SessionManager;
+import java.awt.BorderLayout;
+import java.awt.Color;
+import java.awt.Component;
+import java.awt.Cursor;
+import java.awt.Dimension;
+import java.awt.FlowLayout;
+import java.awt.Font;
 
-import javax.swing.*;
+import javax.swing.BorderFactory;
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
 import javax.swing.border.EmptyBorder;
 import javax.swing.table.DefaultTableCellRenderer;
 import javax.swing.table.DefaultTableModel;
-import java.awt.*;
-import java.util.List;
+
+import com.helpdesk.application.dto.TicketDTO;
+import com.helpdesk.desktop.controller.AuthController;
+import com.helpdesk.desktop.controller.TicketController;
+import com.helpdesk.desktop.controller.UserController;
+import com.helpdesk.desktop.security.SessionManager;
 
 /**
- * CUSTOMER rolune ozel dashboard ekrani.
- * Musteri sadece kendi olusturdugu ticket'lari gorebilir;
- * baskasinin ticket'larina, kullanici yonetimine veya raporlara erisemez.
+ * CUSTOMER rolune ozel dashboard ekrani. Musteri sadece kendi olusturdugu
+ * ticket'lari gorebilir; baskasinin ticket'larina, kullanici yonetimine veya
+ * raporlara erisemez.
  *
- * Ozellikler:
- * - Yalnizca aktif kullanicinin ticket'larini listeler (findByRequesterId).
- * - "+ New Ticket" butonu ile yeni talep olusturulabilir.
+ * Ozellikler: - Yalnizca aktif kullanicinin ticket'larini listeler
+ * (findByRequesterId). - "+ New Ticket" butonu ile yeni talep olusturulabilir.
  * - Ust barda hosgeldin mesaji ve cikis butonu bulunur.
  */
 public class CustomerDashboardFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
+    private final UserController userController;
     private DefaultTableModel tableModel;
     // Secili satirin ticket ID'sini okumak icin field olarak tutulur
     private JTable ticketTable;
     // Ticket listesi — ViewTicketDialog'a DTO gecmek icin hafizada tutulur
     private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
 
-    public CustomerDashboardFrame(AuthController authController, TicketController ticketController) {
+    public CustomerDashboardFrame(AuthController authController, TicketController ticketController,
+            UserController userController) {
         this.authController = authController;
         this.ticketController = ticketController;
+        this.userController = userController;
         initUI();
         loadTickets();
     }
@@ -84,7 +99,7 @@ public class CustomerDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, null).setVisible(true);
+            new LoginFrame(authController, ticketController, userController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -123,7 +138,10 @@ public class CustomerDashboardFrame extends JFrame {
         // Sadece bu kullanıcının ticket'larını gösterir (loadTickets → getMyTickets)
         String[] columns = {"Ticket No", "Title", "Status", "Priority", "Category", "Date"};
         tableModel = new DefaultTableModel(columns, 0) {
-            @Override public boolean isCellEditable(int row, int col) { return false; }
+            @Override
+            public boolean isCellEditable(int row, int col) {
+                return false;
+            }
         };
 
         ticketTable = new JTable(tableModel);
@@ -167,7 +185,9 @@ public class CustomerDashboardFrame extends JFrame {
                     boolean isSelected, boolean hasFocus, int row, int col) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
-                if (!isSelected) setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                if (!isSelected) {
+                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                }
                 return this;
             }
         };
@@ -202,8 +222,10 @@ public class CustomerDashboardFrame extends JFrame {
     private void openCreateTicketDialog() {
         CreateTicketDialog dialog = new CreateTicketDialog(this, ticketController);
         dialog.setVisible(true);
-        if (dialog.isSubmitted()) loadTickets(); // Dialog kapandıktan sonra tabloyu yenile
-    }
+        if (dialog.isSubmitted()) {
+            loadTickets(); // Dialog kapandıktan sonra tabloyu yenile
+
+            }}
 
     private void loadTickets() {
         // Sadece bu müşteriye ait, CLOSED olmayan ticket'lar çekilir

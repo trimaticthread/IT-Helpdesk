@@ -406,8 +406,10 @@ public class SupervisorDashboardFrame extends JFrame {
     }
 
     private void loadTickets() {
-        // Sistemdeki tüm ticket'lar çekilir (supervisor tümünü görebilir)
-        currentTickets = ticketController.getAllTickets();
+        // CLOSED ticket'lar sadece Admin'e görünür; Supervisor aktif ticket'ları yönetir
+        currentTickets = ticketController.getAllTickets().stream()
+                .filter(t -> !"CLOSED".equals(t.getStatus()))
+                .collect(Collectors.toList());
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{

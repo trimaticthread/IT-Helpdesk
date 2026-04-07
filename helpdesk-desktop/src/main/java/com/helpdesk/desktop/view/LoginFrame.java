@@ -177,8 +177,8 @@ public class LoginFrame extends JFrame {
     private void openDashboardForRole(String role) {
         if (role == null) role = "ADMIN";
         switch (role) {
-            case "CUSTOMER" -> new CustomerDashboardFrame(authController, ticketController).setVisible(true);
-            case "AGENT"    -> new AgentDashboardFrame(authController, ticketController).setVisible(true);
+            case "CUSTOMER" -> new CustomerDashboardFrame(authController, ticketController, userController).setVisible(true);
+            case "AGENT"    -> new AgentDashboardFrame(authController, ticketController, userController).setVisible(true);
             case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController).setVisible(true);
             default -> new DashboardFrame(authController, ticketController, userController).setVisible(true);
         }
