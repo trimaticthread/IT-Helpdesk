@@ -57,7 +57,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void yeni_kullanici_olusturulabilmeli_ve_rol_atanmali() {
+    void create_user_should_assign_role() {
         when(passwordEncoder.encode("rawPass")).thenReturn("$hashed");
         when(userDAO.save(any(User.class))).thenReturn(savedUser);
 
@@ -76,7 +76,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void sifre_hashlenip_kaydedilmeli() {
+    void save_should_hash_password_before_persisting() {
         when(passwordEncoder.encode("mypassword")).thenReturn("$hashed");
         when(userDAO.save(any(User.class))).thenReturn(savedUser);
 
@@ -94,7 +94,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void kullanici_id_ile_bulunabilmeli() {
+    void find_by_id_should_return_correct_user() {
         when(userDAO.findById(10L)).thenReturn(Optional.of(savedUser));
 
         Optional<UserDTO> result = userService.findById(10L);
@@ -104,7 +104,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void olmayan_kullanici_bos_donmeli() {
+    void find_by_nonexistent_id_should_return_empty() {
         when(userDAO.findById(999L)).thenReturn(Optional.empty());
 
         Optional<UserDTO> result = userService.findById(999L);
@@ -113,7 +113,7 @@ class UserServiceImplTest {
     }
 
     @Test
-    void olmayan_kullanici_update_te_exception_firlatmali() {
+    void update_nonexistent_user_should_throw_exception() {
         when(userDAO.findById(999L)).thenReturn(Optional.empty());
 
         UserDTO dto = new UserDTO();
@@ -123,25 +123,25 @@ class UserServiceImplTest {
     }
 
     @Test
-    void deleteById_dao_ya_devredilmeli() {
+    void delete_by_id_should_delegate_to_dao() {
         userService.deleteById(5L);
         verify(userDAO).deleteById(5L);
     }
 
     @Test
-    void username_varsa_true_donmeli() {
+    void exists_by_username_should_return_true_when_found() {
         when(userDAO.existsByUsername("varolan")).thenReturn(true);
         assertTrue(userService.existsByUsername("varolan"));
     }
 
     @Test
-    void username_yoksa_false_donmeli() {
+    void exists_by_username_should_return_false_when_not_found() {
         when(userDAO.existsByUsername("yok")).thenReturn(false);
         assertFalse(userService.existsByUsername("yok"));
     }
 
     @Test
-    void tum_kullanicilar_dto_ye_donusturulmeli() {
+    void find_all_should_return_mapped_dtos() {
         when(userDAO.findAll()).thenReturn(List.of(savedUser));
 
         List<UserDTO> result = userService.findAll();

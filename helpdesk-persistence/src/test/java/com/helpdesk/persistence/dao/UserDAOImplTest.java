@@ -26,6 +26,11 @@ class UserDAOImplTest {
     @BeforeEach
     void setUp() {
         userDAO = new UserDAOImpl(jdbcTemplate);
+        jdbcTemplate.execute("DELETE FROM group_users");
+        jdbcTemplate.execute("DELETE FROM user_roles");
+        jdbcTemplate.execute("DELETE FROM comments");
+        jdbcTemplate.execute("DELETE FROM tickets");
+        jdbcTemplate.execute("DELETE FROM users");
     }
 
     private User createTestUser(String username) {
