@@ -1,45 +1,108 @@
-# IT Helpdesk Ticket Sistemi
+# IT Helpdesk Ticket System
 
-> Universite odevi icin gelistirilen, N-Tier mimariye sahip destek talep yonetim sistemi.
-> Spotify mantigi: ayni backend, farkli arayuzler. Hem desktop hem web'den erisim.
-> Gunluk hayatta Jira Server Management ve Zammad sistemlerinden gorduğum yapilari uyarlamaya calistim.
-
----
-
-## Ne Bu?
-
-IT departmanina gelen destek taleplerini (ticket) yoneten bir sistem.
-Kullanici sorununu bildiriyor, agent cozuyor, supervisor izliyor, admin her seyi kontrol ediyor.
-Kisacasi: "internetim calismiyor" diye yaziyorsun, biri geliyor bakiyor.
-
-Desktop uygulama gercek bir masaustu penceresi — Swing ile yazildi, tarayici gerektirmiyor.
-Web uygulamasi tarayicidan erisilen versiyon (Servlet + JSP, sonra eklenecek).
-Ikisi de ayni backend'i kullanıyor — ayni Service, ayni DAO, ayni veritabani.
+> A support ticket management system built with N-Tier architecture for a university project.
+> Same backend, different frontends — accessible from both desktop and (future) web.
+> Inspired by real-world systems like Jira Service Management and Zammad.
 
 ---
 
-## Teknoloji Stack
+## Quick Start (Setup Guide)
 
-| Bilesen | Teknoloji | Versiyon | Neden Bu? |
-|---------|-----------|----------|-----------|
-| Dil | Java | 21 LTS | Kararli, her yerde calisiyor |
-| Framework | Spring Boot | 3.2.5 | Dependency injection ve konfigurasyonu yonetiyor |
-| Desktop UI | Swing | JDK ile gelir | Gercek masaustu penceresi, ekstra bagimlilik yok |
-| Web UI | JSP + JSTL | Servlet 5.x | Tarayicidan erisilen arayuz (sonra eklenecek) |
-| Veri Erisimi | JDBC / JdbcTemplate | Spring 6.x | SQL elle yazilir, ORM yok — ne yaptigini biliyorsun |
-| Veritabani | MySQL | 8.0 | Klasik, saglam, herkes biliyor |
-| Build | Maven | 3.9+ | Multi-module proje yonetimi |
-| Container | Docker | 24.x | "Bende calisiyor" bahanesini ortadan kaldiriyor |
+Follow these steps to get the project running on your machine.
+
+### Prerequisites
+
+| Tool | Version | Download |
+|------|---------|----------|
+| Java JDK | 21 LTS | [adoptium.net](https://adoptium.net) |
+| Maven | 3.9+ | [maven.apache.org](https://maven.apache.org) |
+| Docker Desktop | 24.x | [docker.com](https://www.docker.com/products/docker-desktop) |
+| IntelliJ IDEA | Any | [jetbrains.com](https://www.jetbrains.com/idea) |
+
+### Step 1 — Clone the repository
+
+```bash
+git clone https://github.com/trimaticthread/IT-Helpdesk.git
+cd IT-Helpdesk
+```
+
+### Step 2 — Start the database
+
+Make sure Docker Desktop is running, then:
+
+```bash
+docker-compose up -d
+```
+
+This starts a MySQL 8.0 container. On first run, the database schema is **automatically initialized** from `db/init.sql` — no manual SQL execution needed.
+
+**Connection details (for DataGrip / DBeaver):**
+
+| Field | Value |
+|-------|-------|
+| Host | `localhost` |
+| Port | `3306` |
+| User | `helpdesk_user` |
+| Password | `helpdesk_pass` |
+| Database | `helpdesk_db` |
+
+### Step 3 — Open in IntelliJ IDEA
+
+1. Open IntelliJ IDEA → **File → Open** → select the `IT-Helpdesk` folder
+2. IntelliJ will detect the multi-module Maven project automatically
+3. Wait for Maven to download dependencies (first run may take a few minutes)
+
+### Step 4 — Run the application
+
+1. Navigate to `helpdesk-desktop/src/main/java/com/helpdesk/desktop/DesktopApplication.java`
+2. Click the green **Run** button next to `main()`
+3. The login window will appear
+
+### Default Test Accounts
+
+| Role | Username | Password |
+|------|----------|----------|
+| Admin | `trimaticthread` | `Haziran2002` |
+| Supervisor | `RequemArcade` | `MuratDugan123` |
+| Agent | `sclexx3002` | `Kaancımya123` |
+| Customer | `basibozuk` | `bozukbasi123` |
 
 ---
 
-## Mimari Yapi (N-Tier)
+## What is This?
+
+A system that manages IT support requests (tickets).
+A user reports a problem, an agent resolves it, a supervisor monitors the team, and an admin controls everything.
+In short: you write "my internet isn't working", someone shows up and fixes it.
+
+The desktop application is a real native window — written with Swing, no browser required.
+A web version (Servlet + JSP) is planned for a future release.
+Both share the same backend — same Service, same DAO, same database.
+
+---
+
+## Technology Stack
+
+| Component | Technology | Version | Why? |
+|-----------|-----------|---------|------|
+| Language | Java | 21 LTS | Stable, runs everywhere |
+| Framework | Spring Boot | 3.2.5 | Handles dependency injection and configuration |
+| Desktop UI | Swing (FlatLaf) | JDK built-in | Real native window, no extra dependencies |
+| Web UI | JSP + JSTL | Servlet 5.x | Browser-accessible interface (planned) |
+| Data Access | JDBC / JdbcTemplate | Spring 6.x | Hand-written SQL, no ORM — you know exactly what's happening |
+| Database | MySQL | 8.0 | Classic, reliable, widely known |
+| Build | Maven | 3.9+ | Multi-module project management |
+| Container | Docker | 24.x | Eliminates "works on my machine" excuses |
+
+---
+
+## Architecture (N-Tier)
 
 ```
 ┌──────────────────────────────────────────────┐
 │            PRESENTATION TIER                 │
 │  helpdesk-desktop       helpdesk-web         │
-│  (Swing Penceresi)      (Servlet + JSP)      │
+│  (Swing Window)         (Servlet + JSP)      │
 └──────────────────┬───────────────────────────┘
                    │
 ┌──────────────────▼───────────────────────────┐
@@ -66,138 +129,112 @@ Ikisi de ayni backend'i kullanıyor — ayni Service, ayni DAO, ayni veritabani.
 └──────────────────────────────────────────────┘
 ```
 
-Kural basit: **her katman sadece bir alt katmanla konusur.**
-Controller DAO'ya el atamaz. Service SQL yazamaz. Yazarsa biz yazdirir miyiz? Yazdirmayiz.
+The rule is simple: **each layer only communicates with the layer directly below it.**
+A Controller cannot touch a DAO. A Service cannot write SQL. The architecture enforces this.
 
-Desktop'ta HTTP yok: Swing Controller dogrudan Service'i cagirir.
-Web'de HTTP var: Tarayici → Servlet → Service seklinde gider. Ama Service ve DAO ortaktir.
+In the desktop app there is no HTTP: the Swing Controller calls the Service directly.
+In the web app there is HTTP: Browser → Servlet → Service. But Service and DAO are shared.
 
 ---
 
-## Modul Yapisi
+## Module Structure
 
-Her katman kendi Maven modulunde yasar. Birbirinin isine burnunu sokamaz (compile-time'da engellenir).
+Each layer lives in its own Maven module. They cannot reach into each other's internals (enforced at compile time).
 
 ```
 IT-Helpdesk/
-├── helpdesk-domain/          → Entity (POJO), Enum, Exception — hicbir framework bagimliligi yok
-├── helpdesk-persistence/     → DAO Interface + Impl — JDBC ile SQL
-├── helpdesk-application/     → Service + DTO + Mapper — is mantigi burada
-├── helpdesk-desktop/         → Swing View + Controller — masaustu penceresi
-└── helpdesk-web/             → Servlet + JSP — tarayici arayuzu (sonra eklenecek)
+├── helpdesk-domain/          → Entity (POJO), Enum, Exception — no framework dependencies
+├── helpdesk-persistence/     → DAO Interface + Impl — SQL via JDBC
+├── helpdesk-application/     → Service + DTO + Mapper — business logic lives here
+├── helpdesk-desktop/         → Swing View + Controller — native desktop window
+└── helpdesk-web/             → Servlet + JSP — browser interface (planned)
 ```
 
-### Bagimlilik Zinciri
+### Dependency Chain
 
-| Modul | Neye Bagimli | Teknoloji |
-|-------|-------------|-----------|
-| `helpdesk-domain` | Hicbir seye | Saf Java POJO |
+| Module | Depends On | Technology |
+|--------|-----------|-----------|
+| `helpdesk-domain` | Nothing | Pure Java POJO |
 | `helpdesk-persistence` | domain | JDBC / JdbcTemplate |
-| `helpdesk-application` | domain + persistence | Spring (service katmani) |
+| `helpdesk-application` | domain + persistence | Spring (service layer) |
 | `helpdesk-desktop` | application | Swing + Spring Boot |
 | `helpdesk-web` | application | Servlet + JSP + JSTL |
 
 ---
 
-## Veritabani Tablolari
+## Database Tables
 
-| Tablo | Aciklama | Not |
-|-------|----------|-----|
-| `users` | Sisteme giren herkes | Admin, agent, musteri... |
-| `roles` | Roller | ADMIN, SUPERVISOR, AGENT, CUSTOMER |
-| `permissions` | Yetkiler | Kim ne yapabilir (ticket.create vb.) |
-| `groups_` | Ekipler | MySQL'de "groups" reserved keyword oldugu icin sona _ koyduk |
-| `categories` | Ticket kategorileri | Ag Sorunu, Yazilim Hatasi, Donanim Arizasi... |
-| `tickets` | Destek talepleri | Asil mesele bu |
-| `comments` | Yorumlar | is_internal=true ise musteri gormez |
-| `attachments` | Dosya ekleri | Ekran goruntusu, log dosyasi vb. |
-| `user_roles` | N:M ara tablo | Kimin hangi rolu var |
-| `role_permissions` | N:M ara tablo | Hangi rolun hangi yetkisi var |
-| `group_users` | N:M ara tablo | Kim hangi grupta |
+| Table | Description | Notes |
+|-------|-------------|-------|
+| `users` | Everyone who logs in | Admin, agent, customer... |
+| `roles` | User roles | ADMIN, SUPERVISOR, AGENT, CUSTOMER |
+| `groups_` | Teams | Trailing underscore because `groups` is a reserved keyword in MySQL |
+| `categories` | Ticket categories | Network Issue, Software Bug, Hardware Failure... |
+| `tickets` | Support requests | The main point of the whole system |
+| `comments` | Comments on tickets | `is_internal=true` means the customer cannot see it |
+| `attachments` | File attachments | Screenshots, log files, etc. |
+| `user_roles` | N:M join table | Which user has which role |
+| `group_users` | N:M join table | Who belongs to which group |
 
 ---
 
-## Ticket Yasam Dongusu
+## Ticket Lifecycle
 
 ```
 NEW → OPEN → IN_PROGRESS → PENDING → RESOLVED → CLOSED
                                |
-               Musteri bilgi gonderince
-               geri IN_PROGRESS'e doner
+               Customer sends more info
+               → back to IN_PROGRESS
 ```
 
-| Durum | Ne Demek |
-|-------|----------|
-| `NEW` | Yeni acildi, kimse bakmadi henuz |
-| `OPEN` | Acildi, agent bekleniyor |
-| `IN_PROGRESS` | Agent uzerinde calisiyor |
-| `PENDING` | Musteriden bilgi bekleniyor, eli kolu bagli bekliyor |
-| `RESOLVED` | Cozuldu, musteri onaylarsa kapanacak |
-| `CLOSED` | Bitti, herkes mutlu (umariz) |
+| Status | Meaning |
+|--------|---------|
+| `NEW` | Just opened, no one has looked at it yet |
+| `OPEN` | Open, waiting for an agent to pick it up |
+| `IN_PROGRESS` | Agent is actively working on it |
+| `PENDING` | Waiting for information from the customer |
+| `RESOLVED` | Solved — will close once the customer confirms |
+| `CLOSED` | Done. Everyone is happy (hopefully) |
 
 ---
 
-## Roller (RBAC)
+## Roles (RBAC)
 
-| Rol | Ne Yapar |
-|-----|----------|
-| `ADMIN` | Sistem tanrisi. Her seye erisir, kullanici ekler/siler |
-| `SUPERVISOR` | Ekip lideri. Agent'lari yonetir, raporlari gorur |
-| `AGENT` | Destek elemani. Ticket cozer, yorum yazar. Gercek isi yapan adam |
-| `CUSTOMER` | Son kullanici. Kendi ticket'ini acar ve takip eder, baskasinkini goremez |
-
----
-
-## Calistirma
-
-### 1. Docker ile MySQL'i Ayaga Kaldir
-
-```bash
-docker-compose up -d
-```
-
-### 2. Veritabani Baglantisi (DataGrip)
-
-| Alan | Deger |
-|------|-------|
-| Host | `localhost` |
-| Port | `3306` |
-| User | `helpdesk_user` |
-| Password | `helpdesk_pass` |
-| Database | `helpdesk_db` |
-
-### 3. Projeyi Ac
-
-IntelliJ IDEA ile `IT-Helpdesk` klasorunu ac. Maven otomatik taniyacak.
+| Role | What They Can Do |
+|------|-----------------|
+| `ADMIN` | God mode. Full access — create/delete users, view all tickets, assign, generate reports |
+| `SUPERVISOR` | Team lead. Assign tickets to agents, monitor all tickets, view reports |
+| `AGENT` | Support staff. Resolve tickets, add internal notes. The ones doing the real work |
+| `CUSTOMER` | End user. Opens their own ticket and tracks it — cannot see anyone else's |
 
 ---
 
 ## Design Patterns
 
-| Pattern | Nerede | Ne Yapar |
-|---------|--------|----------|
-| MVC | Swing Controller - Service - View | Her sey kendi isini yapar, birbiriyle karismiyor |
-| DTO | Katmanlar arasi | Entity disariya cikmaz, yerine DTO gider. Guvenlik icin |
-| DAO | Persistence katmani | JDBC'yi soyutlar, Service SQL bilmez |
-| Factory | Ticket olusturma | Ture gore dogru nesneyi uretir |
-| Observer | Durum degisikligi | Ticket durumu degisince ilgili yerlere haber gider |
-| Strategy | Otomatik atama | Farkli atama kurallari arasinda secim yapar |
-| Singleton | Spring Bean'ler | Her siniftan bir tane olusur, hafiza tasarrufu |
-| Builder | DTO/Entity | Cok parametreli nesne olusturmayi okunabilir yapar |
+| Pattern | Where | What It Does |
+|---------|-------|-------------|
+| MVC | Swing Controller → Service → View | Each component has a single responsibility |
+| DTO | Between layers | Entities never leave the backend; DTOs are passed instead. Security by design |
+| DAO | Persistence layer | Abstracts JDBC; the Service layer has no SQL knowledge |
+| Factory | Ticket creation | Produces the right object based on type |
+| Observer | Status changes | Notifies relevant parties when a ticket status changes |
+| Strategy | Auto-assignment | Switches between different assignment rules |
+| Singleton | Spring Beans | One instance per class, saves memory |
+| Builder | DTO / Entity | Makes constructing objects with many parameters readable |
 
 ---
 
-## Proje Durumu
+## Project Status
 
-- [x] Mimari tasarim ve dokumantasyon
-- [x] Docker + MySQL kurulumu
-- [x] Multi-module Maven yapisi
-- [x] Domain katmani (POJO Entity + Enum + Exception)
-- [ ] Persistence katmani (DAO Interface + JDBC Impl)
-- [ ] Application katmani (Service + DTO + Mapper)
-- [ ] Desktop katmani (Swing View + Controller)
-- [ ] Web katmani (Servlet + JSP, sonra)
+- [x] Architecture design and documentation
+- [x] Docker + MySQL setup
+- [x] Multi-module Maven structure
+- [x] Domain layer (POJO Entity + Enum + Exception)
+- [x] Persistence layer (DAO Interface + JDBC Impl)
+- [x] Application layer (Service + DTO + Mapper)
+- [x] Desktop layer (Swing View + Controller — all 4 role dashboards complete)
+- [ ] Web layer (Servlet + JSP — planned)
 
 ---
 
-*Universite Odevi Projesi — 2025*
+*University Project — 2026*
