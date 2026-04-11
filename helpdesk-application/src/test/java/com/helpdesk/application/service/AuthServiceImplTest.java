@@ -55,7 +55,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void dogru_sifre_ile_giris_basarili_olmali() {
+    void login_with_correct_password_should_succeed() {
         when(userDAO.findByUsername("john")).thenReturn(Optional.of(activeUser));
         when(passwordEncoder.matches("secret", "$2a$hashed")).thenReturn(true);
         when(userDAO.getRoleName(1L)).thenReturn("CUSTOMER");
@@ -67,7 +67,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void yanlis_sifre_ile_giris_bos_donmeli() {
+    void login_with_wrong_password_should_return_empty() {
         when(userDAO.findByUsername("john")).thenReturn(Optional.of(activeUser));
         when(passwordEncoder.matches("yanlis", "$2a$hashed")).thenReturn(false);
 
@@ -77,7 +77,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void olmayan_kullanici_bos_donmeli() {
+    void find_by_nonexistent_id_should_return_empty() {
         when(userDAO.findByUsername("yok")).thenReturn(Optional.empty());
 
         Optional<UserDTO> result = authService.login("yok", "sifre");
@@ -86,7 +86,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void pasif_hesap_ile_giris_bos_donmeli() {
+    void login_with_inactive_account_should_return_empty() {
         activeUser.setIsActive(false);
         when(userDAO.findByUsername("john")).thenReturn(Optional.of(activeUser));
 
@@ -98,7 +98,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void basarili_giriste_role_dto_ya_yuklenmeli() {
+    void login_should_load_role_into_dto() {
         when(userDAO.findByUsername("john")).thenReturn(Optional.of(activeUser));
         when(passwordEncoder.matches("secret", "$2a$hashed")).thenReturn(true);
         when(userDAO.getRoleName(1L)).thenReturn("ADMIN");
@@ -110,7 +110,7 @@ class AuthServiceImplTest {
     }
 
     @Test
-    void basarili_giriste_tam_ad_dogru_olmali() {
+    void login_should_return_correct_full_name() {
         when(userDAO.findByUsername("john")).thenReturn(Optional.of(activeUser));
         when(passwordEncoder.matches("secret", "$2a$hashed")).thenReturn(true);
         when(userDAO.getRoleName(1L)).thenReturn("CUSTOMER");

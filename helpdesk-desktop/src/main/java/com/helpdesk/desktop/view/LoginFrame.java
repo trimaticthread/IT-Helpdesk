@@ -71,14 +71,14 @@ public class LoginFrame extends JFrame {
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // Alt başlık — kullanıcıyı yönlendirici küçük metin
-        JLabel subLabel = new JLabel("Sisteme giris yapin");
+        JLabel subLabel = new JLabel("Sign in to your account");
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subLabel.setForeground(new Color(120, 130, 150));
         subLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
         // ─── KULLANICI ADI ALANI ─────────────────────────────────────────────
         // "Kullanici Adi" etiketi — text field'ın üstünde gösterilir
-        JLabel userLabel = new JLabel("Kullanici Adi");
+        JLabel userLabel = new JLabel("Username");
         userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         userLabel.setForeground(new Color(60, 70, 90));
         userLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -91,7 +91,7 @@ public class LoginFrame extends JFrame {
 
         // ─── ŞİFRE ALANI ─────────────────────────────────────────────────────
         // "Sifre" etiketi — şifre kutusunun üstünde gösterilir
-        JLabel passLabel = new JLabel("Sifre");
+        JLabel passLabel = new JLabel("Password");
         passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         passLabel.setForeground(new Color(60, 70, 90));
         passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
@@ -104,7 +104,7 @@ public class LoginFrame extends JFrame {
 
         // ─── GİRİŞ BUTONU ────────────────────────────────────────────────────
         // Mavi buton — tıklayınca handleLogin() çağrılır ve rol bazlı yönlendirme yapılır
-        JButton loginButton = new JButton("Giris Yap");
+        JButton loginButton = new JButton("Login");
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         loginButton.setBackground(new Color(41, 98, 255));
         loginButton.setForeground(Color.WHITE);
@@ -156,7 +156,7 @@ public class LoginFrame extends JFrame {
         String password = new String(passwordField.getPassword());
 
         if (username.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("Kullanici adi ve sifre bos birakilamaz.");
+            errorLabel.setText("Username and password cannot be empty.");
             return;
         }
 
@@ -165,7 +165,7 @@ public class LoginFrame extends JFrame {
             dispose();
             openDashboardForRole(SessionManager.getCurrentUser().getRole());
         } else {
-            errorLabel.setText("Kullanici adi veya sifre yanlis.");
+            errorLabel.setText("Invalid username or password.");
             passwordField.setText("");
         }
     }
