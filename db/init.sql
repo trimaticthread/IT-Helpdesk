@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS groups_ (
     is_active   BOOLEAN DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS departments (
+    id        BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name      VARCHAR(100) NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
 CREATE TABLE IF NOT EXISTS categories (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
@@ -45,6 +51,7 @@ CREATE TABLE IF NOT EXISTS tickets (
     requester_id  BIGINT NOT NULL,
     assignee_id   BIGINT,
     group_id      BIGINT,
+
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at   TIMESTAMP NULL,

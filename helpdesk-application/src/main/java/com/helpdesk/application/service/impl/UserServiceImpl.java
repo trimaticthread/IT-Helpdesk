@@ -4,6 +4,7 @@ import com.helpdesk.application.dto.UserDTO;
 import com.helpdesk.application.mapper.UserMapper;
 import com.helpdesk.application.service.UserService;
 import com.helpdesk.domain.entity.User;
+import com.helpdesk.domain.exception.BusinessException;
 import com.helpdesk.domain.exception.ResourceNotFoundException;
 import com.helpdesk.persistence.dao.UserDAO;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
@@ -71,6 +72,12 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public UserDTO createUser(UserDTO dto, String rawPassword, String roleName){
+        if (userDAO.existsByUsername(dto.getUsername())) {
+            throw new BusinessException("Username already exists: " + dto.getUsername());
+        }
+        if (userDAO.existsByEmail(dto.getEmail())) {
+            throw new BusinessException("Email already registered: " + dto.getEmail());
+        }
         User user = UserMapper.toEntity(dto);
         user.setPasswordHash(passwordEncoder.encode(rawPassword));
         user.setIsActive(true);

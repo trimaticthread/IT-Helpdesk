@@ -75,4 +75,9 @@ public interface CategoryDAO {
      */
     void deleteById(Long id);
 
+    /**
+     * Verilen kategoriye ait toplam ticket sayısını döner.
+     * Silme işlemi öncesi iş kuralı kontrolü için kullanılır.
+     */
+    int countTicketsByCategoryId(Long categoryId);
 }

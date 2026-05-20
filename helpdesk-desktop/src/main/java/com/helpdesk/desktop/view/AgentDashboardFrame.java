@@ -10,6 +10,7 @@ import java.awt.Font;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JOptionPane;
@@ -42,16 +43,25 @@ public class AgentDashboardFrame extends JFrame {
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
+    private final com.helpdesk.desktop.controller.CategoryController categoryController;
+    private final com.helpdesk.desktop.controller.DepartmentController departmentController;
+    private final com.helpdesk.desktop.controller.GroupController groupController;
     private DefaultTableModel tableModel;
-    private JTable ticketTable; // Seçili satırın ID'sini okumak için field'da tutulur
-    // ViewTicketDialog'a DTO geçmek için hafızada tutulur
+    private JTable ticketTable;
     private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
+    private boolean showResolved = false;
 
     public AgentDashboardFrame(AuthController authController, TicketController ticketController,
-                               UserController userController) {
+                               UserController userController,
+                               com.helpdesk.desktop.controller.CategoryController categoryController,
+                               com.helpdesk.desktop.controller.DepartmentController departmentController,
+                               com.helpdesk.desktop.controller.GroupController groupController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
+        this.categoryController = categoryController;
+        this.departmentController = departmentController;
+        this.groupController = groupController;
         initUI();
         loadTickets();
     }
@@ -100,7 +110,7 @@ public class AgentDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -147,9 +157,15 @@ public class AgentDashboardFrame extends JFrame {
         changeStatusButton.setEnabled(false); // Başlangıçta pasif
         changeStatusButton.addActionListener(e -> openChangeStatusDialog());
 
+        JCheckBox showResolvedCheck = new JCheckBox("Show Resolved");
+        showResolvedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        showResolvedCheck.setOpaque(false);
+        showResolvedCheck.addActionListener(e -> { showResolved = showResolvedCheck.isSelected(); loadTickets(); });
+
         toolbar.add(newTicketButton);
         toolbar.add(refreshButton);
         toolbar.add(changeStatusButton);
+        toolbar.add(showResolvedCheck);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
         // ID kolonu gizlidir; sadece seçili satırın ticket ID'sini almak için saklanır
@@ -206,7 +222,7 @@ public class AgentDashboardFrame extends JFrame {
             }
         });
 
-        // Zebra satır renklendirmesi
+        // Zebra + RESOLVED/CLOSED satırları gri
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -214,7 +230,14 @@ public class AgentDashboardFrame extends JFrame {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
                 if (!isSelected) {
-                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                    Object status = tableModel.getValueAt(row, 3);
+                    if ("RESOLVED".equals(status) || "CLOSED".equals(status)) {
+                        setBackground(new Color(240, 240, 240));
+                        setForeground(Color.GRAY);
+                    } else {
+                        setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                        setForeground(Color.BLACK);
+                    }
                 }
                 return this;
             }
@@ -251,20 +274,24 @@ public class AgentDashboardFrame extends JFrame {
      */
     private void openChangeStatusDialog() {
         int row = ticketTable.getSelectedRow();
-        if (row == -1) {
-            return;
-        }
-        // Gizli ID kolunundan (index 0) ticket ID'si okunur
+        if (row == -1) return;
         Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
-        // Agent IN_PROGRESS, PENDING ve RESOLVED yapabilir.
-        // RESOLVED seçilince ticket agent ekranından kaybolur (supervisor/admin tarafında görünür).
         TicketStatus[] options = {
             TicketStatus.IN_PROGRESS, TicketStatus.PENDING, TicketStatus.RESOLVED
         };
+
+        // Mevcut status'u bul, default olarak göster
+        TicketStatus currentStatus = null;
+        try { currentStatus = TicketStatus.valueOf(currentTickets.get(row).getStatus()); } catch (Exception ignored) {}
+        final TicketStatus defaultOption = java.util.Arrays.asList(options).contains(currentStatus)
+                ? currentStatus : options[0];
+
         TicketStatus selected = (TicketStatus) JOptionPane.showInputDialog(
-                this, "Select new status:", "Change Status",
-                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+                this,
+                "Current status: " + (currentStatus != null ? currentStatus : "—") + "\nSelect new status:",
+                "Change Status",
+                JOptionPane.PLAIN_MESSAGE, null, options, defaultOption);
 
         if (selected != null) {
             try {
@@ -278,8 +305,13 @@ public class AgentDashboardFrame extends JFrame {
     }
 
     private void loadTickets() {
-        // Sadece bu agent'a atanmış ticket'lar çekilir (assigneeId = mevcut kullanıcı)
-        currentTickets = ticketController.getAssignedTickets();
+        if (showResolved) {
+            // CLOSED hariç tümü — RESOLVED dahil
+            currentTickets = ticketController.getAllAssignedTickets();
+        } else {
+            // Sadece aktif ticket'lar
+            currentTickets = ticketController.getAssignedTickets();
+        }
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
