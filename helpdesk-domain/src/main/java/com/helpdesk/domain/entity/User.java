@@ -26,6 +26,7 @@ public class User {
     private String phone;
     private String department;
     private Boolean isActive = true;
+    private boolean passwordResetRequired = false;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private Set<Role> roles = new HashSet<>();
@@ -59,6 +60,9 @@ public class User {
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    public boolean isPasswordResetRequired() { return passwordResetRequired; }
+    public void setPasswordResetRequired(boolean passwordResetRequired) { this.passwordResetRequired = passwordResetRequired; }
 
     public LocalDateTime getCreatedAt() { return createdAt; }
     public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }

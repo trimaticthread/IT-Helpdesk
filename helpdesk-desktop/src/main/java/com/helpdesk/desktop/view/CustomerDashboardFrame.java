@@ -43,6 +43,7 @@ public class CustomerDashboardFrame extends JFrame {
     private final com.helpdesk.desktop.controller.CategoryController categoryController;
     private final com.helpdesk.desktop.controller.DepartmentController departmentController;
     private final com.helpdesk.desktop.controller.GroupController groupController;
+    private final com.helpdesk.desktop.controller.SlaController slaController;
     private DefaultTableModel tableModel;
     // Secili satirin ticket ID'sini okumak icin field olarak tutulur
     private JTable ticketTable;
@@ -54,13 +55,15 @@ public class CustomerDashboardFrame extends JFrame {
             UserController userController,
             com.helpdesk.desktop.controller.CategoryController categoryController,
             com.helpdesk.desktop.controller.DepartmentController departmentController,
-            com.helpdesk.desktop.controller.GroupController groupController) {
+            com.helpdesk.desktop.controller.GroupController groupController,
+            com.helpdesk.desktop.controller.SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
         this.categoryController = categoryController;
         this.departmentController = departmentController;
         this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
         loadTickets();
     }
@@ -110,7 +113,7 @@ public class CustomerDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);

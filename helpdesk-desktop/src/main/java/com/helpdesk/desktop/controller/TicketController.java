@@ -113,4 +113,8 @@ public class TicketController {
     public void deleteTicket(Long ticketId) {
         ticketService.deleteById(ticketId);
     }
+
+    public void assignTicketToGroup(Long ticketId, Long groupId) {
+        ticketService.assignTicketToGroup(ticketId, groupId);
+    }
 }

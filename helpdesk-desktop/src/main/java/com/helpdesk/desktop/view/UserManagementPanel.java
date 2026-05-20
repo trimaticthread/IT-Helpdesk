@@ -66,10 +66,20 @@ public class UserManagementPanel extends JPanel {
         deleteButton.setEnabled(false);
         deleteButton.addActionListener(e -> deleteSelectedUser());
 
+        JButton resetPwButton = new JButton("Reset Password");
+        resetPwButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        resetPwButton.setForeground(new Color(180, 100, 0));
+        resetPwButton.setFocusPainted(false);
+        resetPwButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
+        resetPwButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        resetPwButton.setEnabled(false);
+        resetPwButton.addActionListener(e -> resetSelectedUserPassword());
+
         toolbar.add(newUserButton);
         toolbar.add(refreshButton);
         toolbar.add(editButton);
         toolbar.add(deleteButton);
+        toolbar.add(resetPwButton);
 
         // ─── KULLANICI TABLOSU ────────────────────────────────────────────────
         String[] columns = {"ID", "Username", "Full Name", "Email", "Department", "Active"};
@@ -83,6 +93,7 @@ public class UserManagementPanel extends JPanel {
             boolean selected = userTable.getSelectedRow() != -1;
             editButton.setEnabled(selected);
             deleteButton.setEnabled(selected);
+            resetPwButton.setEnabled(selected);
         });
         userTable.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         userTable.setRowHeight(32);
@@ -173,6 +184,22 @@ public class UserManagementPanel extends JPanel {
         if (confirm == JOptionPane.YES_OPTION) {
             userController.deleteUser(id);
             loadUsers();
+        }
+    }
+
+    private void resetSelectedUserPassword() {
+        int row = userTable.getSelectedRow();
+        if (row == -1) return;
+        Long id = (Long) tableModel.getValueAt(row, 0);
+        String username = (String) tableModel.getValueAt(row, 1);
+        int confirm = JOptionPane.showConfirmDialog(this,
+                "'" + username + "' kullanıcısının şifresi Welcome@1234 olarak sıfırlanacak.\nDevam?",
+                "Şifre Sıfırla", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+        if (confirm == JOptionPane.YES_OPTION) {
+            userController.resetPassword(id);
+            JOptionPane.showMessageDialog(this,
+                    "Şifre sıfırlandı. Geçici şifre: Welcome@1234\nKullanıcı ilk girişte şifresini değiştirmek zorundadır.",
+                    "Başarılı", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }

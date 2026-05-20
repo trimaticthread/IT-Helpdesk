@@ -51,6 +51,7 @@ public class UserDAOImpl implements UserDAO {
             user.setPhone(rs.getString("phone"));
             user.setDepartment(rs.getString("department"));
             user.setIsActive(rs.getBoolean("is_active"));
+            user.setPasswordResetRequired(rs.getBoolean("password_reset_required"));
             user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             user.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
             return user;
@@ -173,7 +174,6 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public List<User> findByRoleName(String roleName) {
-        // user_roles ve roles tabloları join edilerek verilen role sahip aktif kullanıcılar döner
         String sql = "SELECT u.* FROM users u " +
                      "JOIN user_roles ur ON u.id = ur.user_id " +
                      "JOIN roles r ON r.id = ur.role_id " +
@@ -181,4 +181,17 @@ public class UserDAOImpl implements UserDAO {
         return jdbcTemplate.query(sql, new UserRowMapper(), roleName);
     }
 
+    @Override
+    public void updatePassword(Long userId, String passwordHash, boolean resetRequired) {
+        jdbcTemplate.update(
+            "UPDATE users SET password_hash=?, password_reset_required=? WHERE id=?",
+            passwordHash, resetRequired, userId);
+    }
+
+    @Override
+    public boolean isPasswordResetRequired(Long userId) {
+        Boolean result = jdbcTemplate.queryForObject(
+            "SELECT password_reset_required FROM users WHERE id=?", Boolean.class, userId);
+        return Boolean.TRUE.equals(result);
+    }
 }

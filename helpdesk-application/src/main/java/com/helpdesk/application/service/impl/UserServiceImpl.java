@@ -102,4 +102,24 @@ public class UserServiceImpl implements UserService {
                 .map(UserMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public void resetPassword(Long userId) {
+        String hash = passwordEncoder.encode("Welcome@1234");
+        userDAO.updatePassword(userId, hash, true);
+    }
+
+    @Override
+    public void changePassword(Long userId, String newPassword) {
+        if (newPassword == null || newPassword.isBlank()) {
+            throw new BusinessException("Yeni şifre boş olamaz.");
+        }
+        String hash = passwordEncoder.encode(newPassword);
+        userDAO.updatePassword(userId, hash, false);
+    }
+
+    @Override
+    public boolean isPasswordResetRequired(Long userId) {
+        return userDAO.isPasswordResetRequired(userId);
+    }
 }

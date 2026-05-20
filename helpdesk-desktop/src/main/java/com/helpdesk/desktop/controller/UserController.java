@@ -58,4 +58,15 @@ public class UserController {
         userService.update(dto);
     }
 
+    public void resetPassword(Long userId) {
+        userService.resetPassword(userId);
+    }
+
+    public void changePassword(Long userId, String newPassword) {
+        userService.changePassword(userId, newPassword);
+    }
+
+    public boolean isPasswordResetRequired(Long userId) {
+        return userService.isPasswordResetRequired(userId);
+    }
 }

@@ -114,6 +114,16 @@ public class TicketServiceImpl implements TicketService {
         ticketDAO.deleteById(id);
     }
 
+    @Override
+    public void assignTicketToGroup(Long ticketId, Long groupId) {
+        Ticket ticket = ticketDAO.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
+        com.helpdesk.domain.entity.Group group = new com.helpdesk.domain.entity.Group();
+        group.setId(groupId);
+        ticket.setGroup(group);
+        ticketDAO.update(ticket);
+    }
+
     private String generateTicketNumber() {
         String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyyMMddHHmmss"));
         return "TKT-" + timestamp;

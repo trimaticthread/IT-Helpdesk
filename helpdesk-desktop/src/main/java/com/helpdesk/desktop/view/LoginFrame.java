@@ -4,6 +4,7 @@ import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.CategoryController;
 import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.GroupController;
+import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
 import com.helpdesk.desktop.security.SessionManager;
@@ -34,6 +35,7 @@ public class LoginFrame extends JFrame {
     private final CategoryController categoryController;
     private final DepartmentController departmentController;
     private final GroupController groupController;
+    private final SlaController slaController;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -41,13 +43,15 @@ public class LoginFrame extends JFrame {
 
     public LoginFrame(AuthController authController, TicketController ticketController,
                       UserController userController, CategoryController categoryController,
-                      DepartmentController departmentController, GroupController groupController) {
+                      DepartmentController departmentController, GroupController groupController,
+                      SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
         this.categoryController = categoryController;
         this.departmentController = departmentController;
         this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
     }
 
@@ -119,9 +123,23 @@ public class LoginFrame extends JFrame {
         loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
         form.add(loginButton);
 
-        form.add(Box.createVerticalStrut(12));
+        form.add(Box.createVerticalStrut(8));
 
-        // Sabit yükseklik — metin değişince layout bozulmasın
+        JButton forgotButton = new JButton("Şifremi Unuttum");
+        forgotButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        forgotButton.setForeground(new Color(100, 130, 200));
+        forgotButton.setBorderPainted(false);
+        forgotButton.setContentAreaFilled(false);
+        forgotButton.setFocusPainted(false);
+        forgotButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        forgotButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        forgotButton.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Şifrenizi unuttuysanız lütfen sistem yöneticinize başvurun.\nYönetici şifrenizi geçici olarak sıfırlayacaktır.",
+                "Şifremi Unuttum", JOptionPane.INFORMATION_MESSAGE));
+        form.add(forgotButton);
+
+        form.add(Box.createVerticalStrut(4));
+
         errorLabel = new JLabel(" ");
         errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         errorLabel.setForeground(new Color(220, 50, 50));
@@ -176,6 +194,16 @@ public class LoginFrame extends JFrame {
         errorLabel.setText(" ");
         boolean success = authController.login(username, password);
         if (success) {
+            Long userId = SessionManager.getCurrentUser().getId();
+            if (userController.isPasswordResetRequired(userId)) {
+                ChangePasswordDialog cpd = new ChangePasswordDialog(this, userController);
+                cpd.setVisible(true);
+                if (!cpd.isPasswordChanged()) {
+                    // Kullanıcı şifresini değiştirmeden kapattı — login'e geri dön
+                    authController.logout();
+                    return;
+                }
+            }
             dispose();
             openDashboardForRole(SessionManager.getCurrentUser().getRole());
         } else {
@@ -191,10 +219,10 @@ public class LoginFrame extends JFrame {
     private void openDashboardForRole(String role) {
         if (role == null) role = "ADMIN";
         switch (role) {
-            case "CUSTOMER"   -> new CustomerDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
-            case "AGENT"      -> new AgentDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
-            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
-            default           -> new DashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
+            case "CUSTOMER"   -> new CustomerDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            case "AGENT"      -> new AgentDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            default           -> new DashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         }
     }
 }

@@ -4,6 +4,7 @@ import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.CategoryController;
 import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.GroupController;
+import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
 import com.helpdesk.desktop.security.SessionManager;
@@ -20,16 +21,19 @@ public class DashboardFrame extends JFrame {
     private final CategoryController categoryController;
     private final DepartmentController departmentController;
     private final GroupController groupController;
+    private final SlaController slaController;
 
     public DashboardFrame(AuthController authController, TicketController ticketController,
                           UserController userController, CategoryController categoryController,
-                          DepartmentController departmentController, GroupController groupController) {
+                          DepartmentController departmentController, GroupController groupController,
+                          SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
         this.categoryController = categoryController;
         this.departmentController = departmentController;
         this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
     }
 
@@ -71,7 +75,7 @@ public class DashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -89,6 +93,7 @@ public class DashboardFrame extends JFrame {
         tabbedPane.addTab("Categories", new CategoryManagementPanel(categoryController));
         tabbedPane.addTab("Departments", new DepartmentManagementPanel(departmentController));
         tabbedPane.addTab("Groups", new GroupManagementPanel(groupController, userController));
+        tabbedPane.addTab("SLA Settings", new SlaManagementPanel(slaController));
 
         root.add(tabbedPane, BorderLayout.CENTER);
     }

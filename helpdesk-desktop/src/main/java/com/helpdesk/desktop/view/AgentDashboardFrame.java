@@ -46,6 +46,7 @@ public class AgentDashboardFrame extends JFrame {
     private final com.helpdesk.desktop.controller.CategoryController categoryController;
     private final com.helpdesk.desktop.controller.DepartmentController departmentController;
     private final com.helpdesk.desktop.controller.GroupController groupController;
+    private final com.helpdesk.desktop.controller.SlaController slaController;
     private DefaultTableModel tableModel;
     private JTable ticketTable;
     private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
@@ -55,13 +56,15 @@ public class AgentDashboardFrame extends JFrame {
                                UserController userController,
                                com.helpdesk.desktop.controller.CategoryController categoryController,
                                com.helpdesk.desktop.controller.DepartmentController departmentController,
-                               com.helpdesk.desktop.controller.GroupController groupController) {
+                               com.helpdesk.desktop.controller.GroupController groupController,
+                               com.helpdesk.desktop.controller.SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
         this.categoryController = categoryController;
         this.departmentController = departmentController;
         this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
         loadTickets();
     }
@@ -110,7 +113,7 @@ public class AgentDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
