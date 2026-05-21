@@ -23,6 +23,7 @@
         <module>helpdesk-persistence</module>
         <module>helpdesk-application</module>
         <module>helpdesk-desktop</module>
+        <module>helpdesk-web</module>
     </modules>
 
     <properties>
