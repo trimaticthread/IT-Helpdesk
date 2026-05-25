@@ -35,7 +35,24 @@
             <artifactId>tomcat-embed-jasper</artifactId>
         </dependency>
 
-        <!-- JSTL 2.x — Jakarta namespace (Spring Boot 3.x zorunlu) -->
+        <!--
+            JSTL — Jakarta namespace (Spring Boot 3.x zorunlu)
+
+            NEDEN İKİ BAĞIMLILIK?
+            org.glassfish.web:jakarta.servlet.jsp.jstl (implementation) kendi POM'unda
+            jakarta.servlet.jsp.jstl-api'yi "provided" scope ile tanımlar.
+            Maven "provided" scope'u transitively çekmez.
+            Sonuç: ConditionalTagSupport gibi JSTL sınıfları runtime'da bulunamaz → 500.
+            Çözüm: API jar'ını compile scope ile açıkça ekle.
+        -->
+        <!-- JSTL API — interface + abstract sınıflar -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- JSTL Implementation — <c:if>, <c:out>, <c:forEach> tag gerçekleştirimleri -->
         <dependency>
             <groupId>org.glassfish.web</groupId>
             <artifactId>jakarta.servlet.jsp.jstl</artifactId>
