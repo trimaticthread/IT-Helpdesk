@@ -2,6 +2,7 @@ package com.helpdesk.desktop.view;
 
 import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.UserController;
+import com.helpdesk.domain.entity.Department;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -24,6 +25,7 @@ import java.awt.*;
 public class CreateUserDialog extends JDialog {
 
     private final UserController userController;
+    private final DepartmentController departmentController;
     private boolean created = false;
 
     private JTextField usernameField;
@@ -31,19 +33,15 @@ public class CreateUserDialog extends JDialog {
     private JPasswordField passwordField;
     private JTextField firstNameField;
     private JTextField lastNameField;
-    private JTextField departmentField;
+    private JComboBox<String> departmentCombo;
     private JComboBox<String> roleCombo;
     private JLabel errorLabel;
 
-    public CreateUserDialog(Frame parent, UserController userController) {
+    public CreateUserDialog(Frame parent, UserController userController, DepartmentController departmentController) {
         super(parent, "New User", true);
         this.userController = userController;
+        this.departmentController = departmentController;
         initUI();
-    }
-
-    /** DepartmentController parametresi alan overload — UserManagementPanel tarafından kullanılır. */
-    public CreateUserDialog(Frame parent, UserController userController, DepartmentController departmentController) {
-        this(parent, userController);
     }
 
     private void initUI() {
@@ -128,11 +126,16 @@ public class CreateUserDialog extends JDialog {
         form.add(passwordField);
         form.add(Box.createVerticalStrut(12));
 
-        // Departman alanı — opsiyonel; boş bırakılabilir
+        // Departman seçici — DB'deki aktif departmanlar listelenir
         form.add(makeLabel("Department"));
         form.add(Box.createVerticalStrut(4));
-        departmentField = makeTextField();
-        form.add(departmentField);
+        String[] deptNames = departmentController.getActiveDepartments()
+                .stream().map(Department::getName).toArray(String[]::new);
+        departmentCombo = new JComboBox<>(deptNames.length > 0 ? deptNames : new String[]{"—"});
+        departmentCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        departmentCombo.setMaximumSize(new Dimension(Integer.MAX_VALUE, 34));
+        departmentCombo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(departmentCombo);
         form.add(Box.createVerticalStrut(12));
 
         // Rol seçici — CUSTOMER / AGENT / SUPERVISOR / ADMIN
@@ -204,14 +207,19 @@ public class CreateUserDialog extends JDialog {
         String password = new String(passwordField.getPassword());
         String firstName = firstNameField.getText().trim();
         String lastName = lastNameField.getText().trim();
-        String department = departmentField.getText().trim();
+        String department = (String) departmentCombo.getSelectedItem();
         String role = (String) roleCombo.getSelectedItem();
 
-        if (username.isEmpty() || email.isEmpty() || password.isEmpty()
-                || firstName.isEmpty() || lastName.isEmpty()) {
-            errorLabel.setText("Required fields cannot be empty.");
+        if (firstName.isEmpty())  { errorLabel.setText("First name cannot be empty.");          return; }
+        if (lastName.isEmpty())   { errorLabel.setText("Last name cannot be empty.");           return; }
+        if (username.isEmpty())   { errorLabel.setText("Username cannot be empty.");            return; }
+        if (email.isEmpty())      { errorLabel.setText("Email cannot be empty.");               return; }
+        if (!email.contains("@") || !email.contains(".")) {
+            errorLabel.setText("Invalid email format.");
             return;
         }
+        if (password.isEmpty())   { errorLabel.setText("Password cannot be empty.");            return; }
+        if (password.length() < 6) { errorLabel.setText("Password must be at least 6 characters."); return; }
 
         try {
             userController.createUser(username, email, password, firstName, lastName, department, role);
