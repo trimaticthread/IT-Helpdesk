@@ -51,4 +51,10 @@ public interface UserDAO {
     void assignRole(Long Id, String roleName);
 
     String getRoleName(Long userId);
+
+    void updatePassword(Long id, String passwordHash);
+
+    boolean isPasswordResetRequired(Long id);
+
+    void setPasswordResetRequired(Long id, boolean required);
 }

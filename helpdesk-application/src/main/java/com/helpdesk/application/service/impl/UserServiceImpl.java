@@ -95,4 +95,23 @@ public class UserServiceImpl implements UserService {
                 .map(UserMapper::toDTO)
                 .collect(Collectors.toList());
     }
+
+    @Override
+    public boolean isPasswordResetRequired(Long userId) {
+        return userDAO.isPasswordResetRequired(userId);
+    }
+
+    @Override
+    public void changePassword(Long userId, String newRawPassword) {
+        String hash = passwordEncoder.encode(newRawPassword);
+        userDAO.updatePassword(userId, hash);
+        userDAO.setPasswordResetRequired(userId, false);
+    }
+
+    @Override
+    public void resetPassword(Long userId) {
+        String hash = passwordEncoder.encode("Welcome@1234");
+        userDAO.updatePassword(userId, hash);
+        userDAO.setPasswordResetRequired(userId, true);
+    }
 }

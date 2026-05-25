@@ -19,4 +19,31 @@ public class CategoryServiceImpl implements CategoryService {
     public List<Category> findAllActive() {
         return categoryDAO.findAllActive();
     }
+
+    @Override
+    public List<Category> getAllCategories() {
+        return categoryDAO.findAll();
+    }
+
+    @Override
+    public Category createCategory(String name, String description) {
+        Category category = new Category();
+        category.setName(name);
+        category.setDescription(description);
+        category.setIsActive(true);
+        return categoryDAO.save(category);
+    }
+
+    @Override
+    public void toggleActive(Long id) {
+        categoryDAO.findById(id).ifPresent(cat -> {
+            cat.setIsActive(!cat.getIsActive());
+            categoryDAO.update(cat);
+        });
+    }
+
+    @Override
+    public void deleteCategory(Long id) {
+        categoryDAO.deleteById(id);
+    }
 }

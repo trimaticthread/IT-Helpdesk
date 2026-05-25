@@ -58,4 +58,14 @@ public class UserController {
         userService.update(dto);
     }
 
+    /** Kullanicinin sifresini degistirir. */
+    public void changePassword(Long userId, String newPassword) {
+        userService.changePassword(userId, newPassword);
+    }
+
+    /** Sifreyi Welcome@1234 olarak sifirlar, bir sonraki giriste degistirme zorunda birakilir. */
+    public void resetPassword(Long id) {
+        userService.resetPassword(id);
+    }
+
 }

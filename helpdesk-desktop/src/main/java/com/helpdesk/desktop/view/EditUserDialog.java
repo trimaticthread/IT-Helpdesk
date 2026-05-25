@@ -1,6 +1,7 @@
 package com.helpdesk.desktop.view;
 
 import com.helpdesk.application.dto.UserDTO;
+import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.UserController;
 
 import javax.swing.*;
@@ -38,6 +39,11 @@ public class EditUserDialog extends JDialog {
         this.userController = userController;
         this.user = user;
         initUI();
+    }
+
+    /** DepartmentController parametresi alan overload — UserManagementPanel tarafından kullanılır. */
+    public EditUserDialog(Frame parent, UserController userController, DepartmentController departmentController, UserDTO user) {
+        this(parent, userController, user);
     }
 
     private void initUI() {

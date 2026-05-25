@@ -1,5 +1,6 @@
 package com.helpdesk.desktop.view;
 
+import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.UserController;
 
 import javax.swing.*;
@@ -38,6 +39,11 @@ public class CreateUserDialog extends JDialog {
         super(parent, "New User", true);
         this.userController = userController;
         initUI();
+    }
+
+    /** DepartmentController parametresi alan overload — UserManagementPanel tarafından kullanılır. */
+    public CreateUserDialog(Frame parent, UserController userController, DepartmentController departmentController) {
+        this(parent, userController);
     }
 
     private void initUI() {
