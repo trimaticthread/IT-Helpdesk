@@ -9,10 +9,6 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 
 import com.formdev.flatlaf.FlatIntelliJLaf;
 import com.helpdesk.desktop.controller.AuthController;
-import com.helpdesk.desktop.controller.CategoryController;
-import com.helpdesk.desktop.controller.DepartmentController;
-import com.helpdesk.desktop.controller.GroupController;
-import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
 import com.helpdesk.desktop.view.LoginFrame;
@@ -36,22 +32,11 @@ public class DesktopApplication implements ApplicationRunner {
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
-    private final CategoryController categoryController;
-    private final DepartmentController departmentController;
-    private final GroupController groupController;
-    private final SlaController slaController;
 
-    public DesktopApplication(AuthController authController, TicketController ticketController,
-                               UserController userController, CategoryController categoryController,
-                               DepartmentController departmentController, GroupController groupController,
-                               SlaController slaController) {
+    public DesktopApplication(AuthController authController, TicketController ticketController, UserController userController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
-        this.categoryController = categoryController;
-        this.departmentController = departmentController;
-        this.groupController = groupController;
-        this.slaController = slaController;
     }
 
     public static void main(String[] args) {
@@ -63,7 +48,7 @@ public class DesktopApplication implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
         SwingUtilities.invokeLater(() -> {
-            LoginFrame loginFrame = new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController);
+            LoginFrame loginFrame = new LoginFrame(authController, ticketController, userController);
             loginFrame.setVisible(true);
         });
     }

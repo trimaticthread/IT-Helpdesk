@@ -72,7 +72,6 @@ public class User {
 
     public Set<Role> getRoles() { return roles; }
     public void setRoles(Set<Role> roles) { this.roles = roles; }
-
     public Set<Group> getGroups() { return groups; }
     public void setGroups(Set<Group> groups) { this.groups = groups; }
 }

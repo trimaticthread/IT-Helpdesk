@@ -52,7 +52,6 @@ CREATE TABLE IF NOT EXISTS tickets (
     requester_id  BIGINT NOT NULL,
     assignee_id   BIGINT,
     group_id      BIGINT,
-
     created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     resolved_at   TIMESTAMP NULL,

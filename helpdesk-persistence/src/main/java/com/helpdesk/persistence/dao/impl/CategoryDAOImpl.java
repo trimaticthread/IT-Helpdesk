@@ -109,11 +109,4 @@ public class CategoryDAOImpl implements CategoryDAO {
         String sql = "DELETE FROM categories WHERE id = ?";
         jdbcTemplate.update(sql, id);
     }
-
-    @Override
-    public int countTicketsByCategoryId(Long categoryId) {
-        String sql = "SELECT COUNT(*) FROM tickets WHERE category_id = ?";
-        Integer count = jdbcTemplate.queryForObject(sql, Integer.class, categoryId);
-        return count != null ? count : 0;
-    }
 }

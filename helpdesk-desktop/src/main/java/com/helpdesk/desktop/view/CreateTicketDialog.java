@@ -34,7 +34,7 @@ public class CreateTicketDialog extends JDialog {
     private JLabel errorLabel;
 
     public CreateTicketDialog(Frame parent, TicketController ticketController) {
-        super(parent, "Yeni Destek Talebi", true);
+        super(parent, "New Support Ticket", true);
         this.ticketController = ticketController;
         initUI();
         loadCategories();
@@ -53,7 +53,7 @@ public class CreateTicketDialog extends JDialog {
 
         // ─── DİALOG BAŞLIĞI ──────────────────────────────────────────────────
         // Formun amacını belirtir
-        JLabel titleLabel = new JLabel("Yeni Destek Talebi");
+        JLabel titleLabel = new JLabel("New Support Ticket");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 18));
         titleLabel.setForeground(new Color(30, 40, 60));
         titleLabel.setBorder(new EmptyBorder(0, 0, 20, 0));
@@ -65,7 +65,7 @@ public class CreateTicketDialog extends JDialog {
         form.setBackground(Color.WHITE);
 
         // Ticket başlık alanı — zorunlu alan; boş bırakılamaz
-        form.add(makeLabel("Baslik"));
+        form.add(makeLabel("Title"));
         form.add(Box.createVerticalStrut(5));
         titleField = new JTextField();
         titleField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -76,7 +76,7 @@ public class CreateTicketDialog extends JDialog {
 
         // Açıklama alanı — çok satırlı; sorunun detayını içerir
         // Kelime bazlı satır kaydırma (wrapStyleWord) aktif
-        form.add(makeLabel("Aciklama"));
+        form.add(makeLabel("Description"));
         form.add(Box.createVerticalStrut(5));
         descriptionArea = new JTextArea(4, 0);
         descriptionArea.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -98,7 +98,7 @@ public class CreateTicketDialog extends JDialog {
         JPanel prioPanel = new JPanel();
         prioPanel.setLayout(new BoxLayout(prioPanel, BoxLayout.Y_AXIS));
         prioPanel.setBackground(Color.WHITE);
-        prioPanel.add(makeLabel("Oncelik"));
+        prioPanel.add(makeLabel("Priority"));
         prioPanel.add(Box.createVerticalStrut(5));
         priorityCombo = new JComboBox<>(new String[]{"LOW", "MEDIUM", "HIGH", "CRITICAL"});
         priorityCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -110,7 +110,7 @@ public class CreateTicketDialog extends JDialog {
         JPanel catPanel = new JPanel();
         catPanel.setLayout(new BoxLayout(catPanel, BoxLayout.Y_AXIS));
         catPanel.setBackground(Color.WHITE);
-        catPanel.add(makeLabel("Kategori"));
+        catPanel.add(makeLabel("Category"));
         catPanel.add(Box.createVerticalStrut(5));
         categoryCombo = new JComboBox<>(); // Öğeler loadCategories() ile doldurulur
         categoryCombo.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -137,14 +137,14 @@ public class CreateTicketDialog extends JDialog {
         buttonPanel.setBorder(new EmptyBorder(16, 0, 0, 0));
 
         // İptal butonu — formu temizlemeden kapatır, ticket oluşmaz
-        JButton cancelButton = new JButton("Iptal");
+        JButton cancelButton = new JButton("Cancel");
         cancelButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         cancelButton.setFocusPainted(false);
         cancelButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         cancelButton.addActionListener(e -> dispose());
 
         // Gönder butonu — başlık ve kategori kontrolü sonrası ticket oluşturur
-        JButton submitButton = new JButton("Talebi Olustur");
+        JButton submitButton = new JButton("Create Ticket");
         submitButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         submitButton.setBackground(new Color(41, 98, 255));
         submitButton.setForeground(Color.WHITE);
@@ -180,11 +180,11 @@ public class CreateTicketDialog extends JDialog {
         Category category = (Category) categoryCombo.getSelectedItem();
 
         if (title.isEmpty()) {
-            errorLabel.setText("Baslik bos birakilamaz.");
+            errorLabel.setText("Title cannot be empty.");
             return;
         }
         if (category == null) {
-            errorLabel.setText("Lutfen bir kategori secin.");
+            errorLabel.setText("Please select a category.");
             return;
         }
 

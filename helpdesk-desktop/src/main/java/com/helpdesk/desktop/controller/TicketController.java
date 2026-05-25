@@ -64,18 +64,10 @@ public class TicketController {
 
     public List<TicketDTO> getAssignedTickets() {
         Long userId = SessionManager.getCurrentUser().getId();
+        // RESOLVED ve CLOSED ticket'lar agent ekranından gizlenir
         return ticketService.findByAssigneeId(userId)
                 .stream()
                 .filter(t -> !"CLOSED".equals(t.getStatus()) && !"RESOLVED".equals(t.getStatus()))
-                .collect(java.util.stream.Collectors.toList());
-    }
-
-    // CLOSED hariç tüm atanmış ticket'lar — "Show Resolved" toggle için
-    public List<TicketDTO> getAllAssignedTickets() {
-        Long userId = SessionManager.getCurrentUser().getId();
-        return ticketService.findByAssigneeId(userId)
-                .stream()
-                .filter(t -> !"CLOSED".equals(t.getStatus()))
                 .collect(java.util.stream.Collectors.toList());
     }
 
@@ -112,9 +104,5 @@ public class TicketController {
 
     public void deleteTicket(Long ticketId) {
         ticketService.deleteById(ticketId);
-    }
-
-    public void assignTicketToGroup(Long ticketId, Long groupId) {
-        ticketService.assignTicketToGroup(ticketId, groupId);
     }
 }

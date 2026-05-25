@@ -26,6 +26,11 @@ class UserDAOImplTest {
     @BeforeEach
     void setUp() {
         userDAO = new UserDAOImpl(jdbcTemplate);
+        jdbcTemplate.execute("DELETE FROM group_users");
+        jdbcTemplate.execute("DELETE FROM user_roles");
+        jdbcTemplate.execute("DELETE FROM comments");
+        jdbcTemplate.execute("DELETE FROM tickets");
+        jdbcTemplate.execute("DELETE FROM users");
     }
 
     private User createTestUser(String username) {
@@ -69,11 +74,10 @@ class UserDAOImplTest {
 
     @Test
     void find_all_should_return_all_saved_users() {
-        int before = userDAO.findAll().size();
         userDAO.save(createTestUser("user1"));
         userDAO.save(createTestUser("user2"));
         List<User> all = userDAO.findAll();
-        assertEquals(before + 2, all.size());
+        assertEquals(2, all.size());
     }
 
     @Test

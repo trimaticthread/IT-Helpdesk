@@ -24,12 +24,4 @@ public interface UserService {
 
     /** Verilen role sahip aktif kullanicilari dondurur. */
     List<UserDTO> findByRole(String roleName);
-
-    /** Şifreyi Welcome@1234 yapar, flag'i true'ya çeker. */
-    void resetPassword(Long userId);
-
-    /** Yeni şifreyi kaydeder, flag'i false'a çeker. */
-    void changePassword(Long userId, String newPassword);
-
-    boolean isPasswordResetRequired(Long userId);
 }
