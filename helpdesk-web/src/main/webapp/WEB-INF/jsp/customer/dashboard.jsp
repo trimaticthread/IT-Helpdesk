@@ -1,20 +1,42 @@
 <%@ page contentType="text/html;charset=UTF-8" language="java" %>
 <%@ taglib prefix="c" uri="jakarta.tags.core" %>
-<%-- Customer Dashboard — CUSTOMER rolündeki kullanıcıya gösterilir --%>
-<!DOCTYPE html>
-<html lang="tr">
-<head>
-    <meta charset="UTF-8">
-    <title>Müşteri Paneli — IT Helpdesk</title>
-</head>
-<body>
+<c:set var="pageTitle" value="Dashboard" scope="request"/>
+<%@ include file="/WEB-INF/jsp/common/layout.jsp" %>
 
-<h1>Müşteri Paneli</h1>
-<p>Hoşgeldin, <c:out value="${sessionScope.currentUser.username}"/>!</p>
-<p>Rol: CUSTOMER</p>
-<hr/>
-<p><em>Bu sayfa henüz yapım aşamasındadır.</em></p>
-<p><a href="${pageContext.request.contextPath}/logout">Çıkış Yap</a></p>
+<div class="page-header">
+    <h1>Welcome, <c:out value="${sessionScope.currentUser.firstName}"/>!</h1>
+    <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">+ New Ticket</a>
+</div>
 
+<%-- Şifre değiştirildi bildirimi --%>
+<c:if test="${param.passwordChanged == 'true'}">
+    <div class="alert alert-success">Your password has been changed successfully.</div>
+</c:if>
+
+<div class="stats-grid">
+    <div class="stat-card">
+        <div class="stat-number"><c:out value="${totalTickets != null ? totalTickets : 0}"/></div>
+        <div class="stat-label">Total Tickets</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number"><c:out value="${openTickets != null ? openTickets : 0}"/></div>
+        <div class="stat-label">Open</div>
+    </div>
+    <div class="stat-card">
+        <div class="stat-number"><c:out value="${resolvedTickets != null ? resolvedTickets : 0}"/></div>
+        <div class="stat-label">Resolved</div>
+    </div>
+</div>
+
+<div class="card">
+    <p style="color:#7a8ea0; font-size:13px;">
+        Use the <strong>My Tickets</strong> link in the navigation to view all your tickets,
+        or click <strong>+ New Ticket</strong> to submit a support request.
+    </p>
+    <br/>
+    <a href="${pageContext.request.contextPath}/tickets" class="btn btn-secondary">View My Tickets</a>
+</div>
+
+</div>
 </body>
 </html>
