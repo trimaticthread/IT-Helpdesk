@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+         http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>com.helpdesk</groupId>
+        <artifactId>helpdesk-system</artifactId>
+        <version>1.0.0</version>
+    </parent>
+
+    <artifactId>helpdesk-web</artifactId>
+    <packaging>jar</packaging>
+    <name>helpdesk-web</name>
+
+    <dependencies>
+        <!-- Kendi application katmanı — Service ve DTO'lar buradan gelir -->
+        <dependency>
+            <groupId>com.helpdesk</groupId>
+            <artifactId>helpdesk-application</artifactId>
+            <version>1.0.0</version>
+        </dependency>
+
+        <!-- Spring Boot Web — embedded Tomcat + Servlet desteği -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
+        </dependency>
+
+        <!-- JSP rendering için -->
+        <dependency>
+            <groupId>org.apache.tomcat.embed</groupId>
+            <artifactId>tomcat-embed-jasper</artifactId>
+        </dependency>
+
+        <!--
+            JSTL — Jakarta namespace (Spring Boot 3.x zorunlu)
+
+            NEDEN İKİ BAĞIMLILIK?
+            org.glassfish.web:jakarta.servlet.jsp.jstl (implementation) kendi POM'unda
+            jakarta.servlet.jsp.jstl-api'yi "provided" scope ile tanımlar.
+            Maven "provided" scope'u transitively çekmez.
+            Sonuç: ConditionalTagSupport gibi JSTL sınıfları runtime'da bulunamaz → 500.
+            Çözüm: API jar'ını compile scope ile açıkça ekle.
+        -->
+        <!-- JSTL API — interface + abstract sınıflar -->
+        <dependency>
+            <groupId>jakarta.servlet.jsp.jstl</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl-api</artifactId>
+            <version>3.0.0</version>
+        </dependency>
+
+        <!-- JSTL Implementation — <c:if>, <c:out>, <c:forEach> tag gerçekleştirimleri -->
+        <dependency>
+            <groupId>org.glassfish.web</groupId>
+            <artifactId>jakarta.servlet.jsp.jstl</artifactId>
+            <version>3.0.1</version>
+        </dependency>
+
+        <!-- BCrypt — şifre doğrulama -->
+        <dependency>
+            <groupId>org.springframework.security</groupId>
+            <artifactId>spring-security-crypto</artifactId>
+        </dependency>
+
+        <!-- MySQL -->
+        <dependency>
+            <groupId>com.mysql</groupId>
+            <artifactId>mysql-connector-j</artifactId>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <configuration>
+                    <mainClass>com.helpdesk.web.WebApplication</mainClass>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+
+</project>

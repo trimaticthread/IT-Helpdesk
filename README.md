@@ -233,7 +233,7 @@ NEW → OPEN → IN_PROGRESS → PENDING → RESOLVED → CLOSED
 - [x] Persistence layer (DAO Interface + JDBC Impl)
 - [x] Application layer (Service + DTO + Mapper)
 - [x] Desktop layer (Swing View + Controller — all 4 role dashboards complete)
-- [ ] Web layer (Servlet + JSP — planned)
+- [x] Web layer (Spring MVC + JSP — login + auth + session complete, customer flow in progress)
 
 ---
 

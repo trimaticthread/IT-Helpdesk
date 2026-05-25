@@ -13,6 +13,12 @@ CREATE TABLE IF NOT EXISTS groups_ (
     is_active   BOOLEAN DEFAULT TRUE
 );
 
+CREATE TABLE IF NOT EXISTS departments (
+    id        BIGINT AUTO_INCREMENT PRIMARY KEY,
+    name      VARCHAR(100) NOT NULL UNIQUE,
+    is_active BOOLEAN DEFAULT TRUE
+);
+
 CREATE TABLE IF NOT EXISTS categories (
     id          BIGINT AUTO_INCREMENT PRIMARY KEY,
     name        VARCHAR(100) NOT NULL UNIQUE,
@@ -29,9 +35,10 @@ CREATE TABLE IF NOT EXISTS users (
     last_name     VARCHAR(50)  NOT NULL,
     phone         VARCHAR(20),
     department    VARCHAR(100),
-    is_active     BOOLEAN   DEFAULT TRUE,
-    created_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-    updated_at    TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    is_active                BOOLEAN   DEFAULT TRUE,
+    password_reset_required  BOOLEAN   DEFAULT FALSE,
+    created_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    updated_at               TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE TABLE IF NOT EXISTS tickets (
@@ -96,6 +103,13 @@ CREATE TABLE IF NOT EXISTS group_users (
     FOREIGN KEY (user_id)  REFERENCES users(id)
 );
 
+CREATE TABLE IF NOT EXISTS sla_settings (
+    id                      BIGINT AUTO_INCREMENT PRIMARY KEY,
+    priority                VARCHAR(20) NOT NULL UNIQUE,
+    response_time_minutes   INT         NOT NULL,
+    resolution_time_minutes INT         NOT NULL
+);
+
 -- Roller
 INSERT INTO roles (name, description) VALUES ('ADMIN',      'Sistem yoneticisi');
 INSERT INTO roles (name, description) VALUES ('SUPERVISOR', 'Ekip yoneticisi');
@@ -132,6 +146,12 @@ INSERT INTO user_roles (user_id, role_id) VALUES (1, 1); -- trimaticthread → A
 INSERT INTO user_roles (user_id, role_id) VALUES (2, 2); -- RequemArcade   → SUPERVISOR
 INSERT INTO user_roles (user_id, role_id) VALUES (3, 3); -- sclexx3002     → AGENT
 INSERT INTO user_roles (user_id, role_id) VALUES (4, 4); -- basibozuk      → CUSTOMER
+
+-- SLA ayarlari (dakika cinsinden)
+INSERT INTO sla_settings (priority, response_time_minutes, resolution_time_minutes) VALUES ('CRITICAL', 15,   60);
+INSERT INTO sla_settings (priority, response_time_minutes, resolution_time_minutes) VALUES ('HIGH',     60,   240);
+INSERT INTO sla_settings (priority, response_time_minutes, resolution_time_minutes) VALUES ('MEDIUM',   240,  1440);
+INSERT INTO sla_settings (priority, response_time_minutes, resolution_time_minutes) VALUES ('LOW',      1440, 4320);
 
 -- Grup atamalari
 INSERT INTO group_users (group_id, user_id) VALUES (1, 1); -- trimaticthread → IT Department
