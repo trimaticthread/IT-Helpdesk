@@ -24,4 +24,16 @@ public interface UserService {
 
     /** Verilen role sahip aktif kullanicilari dondurur. */
     List<UserDTO> findByRole(String roleName);
+
+    /** Kullanicinin ilk giriste sifre degistirmesi gerekip gerekmedigini dondurur. */
+    boolean isPasswordResetRequired(Long userId);
+
+    /** Kullanicinin sifresini yeni deger ile gunceller. */
+    void changePassword(Long userId, String newRawPassword);
+
+    /**
+     * Kullanicinin sifresini Welcome@1234 olarak sifirlar ve
+     * bir sonraki giriste degistirme zorunlulugunu aktiflestirir.
+     */
+    void resetPassword(Long userId);
 }

@@ -25,5 +25,7 @@ public interface TicketService {
 
     TicketDTO assignTicket(Long ticketId, Long agentId);
 
+    TicketDTO assignGroup(Long ticketId, Long groupId);
+
     void deleteById(Long id);
 }

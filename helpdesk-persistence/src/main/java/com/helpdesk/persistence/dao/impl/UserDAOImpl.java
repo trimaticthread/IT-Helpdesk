@@ -51,6 +51,7 @@ public class UserDAOImpl implements UserDAO {
             user.setPhone(rs.getString("phone"));
             user.setDepartment(rs.getString("department"));
             user.setIsActive(rs.getBoolean("is_active"));
+            user.setPasswordResetRequired(rs.getBoolean("password_reset_required"));
             user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
             user.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
             return user;
@@ -138,7 +139,8 @@ public class UserDAOImpl implements UserDAO {
         jdbcTemplate.update("DELETE FROM tickets WHERE requester_id = ?", id);
         // 3. Kullanıcıya atanmış ticketlardan atamasını kaldır (silme değil — ticket korunur)
         jdbcTemplate.update("UPDATE tickets SET assignee_id = NULL WHERE assignee_id = ?", id);
-        // 4. Rol bağlantısını sil, ardından kullanıcıyı sil
+        // 4. Grup ve rol bağlantılarını sil, ardından kullanıcıyı sil
+        jdbcTemplate.update("DELETE FROM group_users WHERE user_id = ?", id);
         jdbcTemplate.update("DELETE FROM user_roles WHERE user_id = ?", id);
         jdbcTemplate.update("DELETE FROM users WHERE id = ?", id);
     }
@@ -172,12 +174,32 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public List<User> findByRoleName(String roleName) {
-        // user_roles ve roles tabloları join edilerek verilen role sahip aktif kullanıcılar döner
         String sql = "SELECT u.* FROM users u " +
                      "JOIN user_roles ur ON u.id = ur.user_id " +
                      "JOIN roles r ON r.id = ur.role_id " +
                      "WHERE r.name = ? AND u.is_active = true";
         return jdbcTemplate.query(sql, new UserRowMapper(), roleName);
+    }
+
+    @Override
+    public void updatePassword(Long id, String passwordHash) {
+        jdbcTemplate.update(
+            "UPDATE users SET password_hash = ?, updated_at = NOW() WHERE id = ?",
+            passwordHash, id);
+    }
+
+    @Override
+    public boolean isPasswordResetRequired(Long id) {
+        String sql = "SELECT password_reset_required FROM users WHERE id = ?";
+        List<Boolean> result = jdbcTemplate.queryForList(sql, Boolean.class, id);
+        return !result.isEmpty() && Boolean.TRUE.equals(result.get(0));
+    }
+
+    @Override
+    public void setPasswordResetRequired(Long id, boolean required) {
+        jdbcTemplate.update(
+            "UPDATE users SET password_reset_required = ?, updated_at = NOW() WHERE id = ?",
+            required, id);
     }
 
 }

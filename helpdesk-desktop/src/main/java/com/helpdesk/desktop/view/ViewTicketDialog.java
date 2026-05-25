@@ -187,6 +187,21 @@ public class ViewTicketDialog extends JDialog {
             bottomRow.add(internalCheckBox);
         }
 
+        // RESOLVED / CLOSED ticket'ta tüm yorum alanı kapalı — internal note dahil
+        boolean isClosed = "RESOLVED".equals(ticket.getStatus()) || "CLOSED".equals(ticket.getStatus());
+        if (isClosed) {
+            commentInput.setEnabled(false);
+            commentInput.setBackground(new Color(245, 245, 245));
+            commentInput.setForeground(new Color(150, 150, 150));
+            addCommentBtn.setEnabled(false);
+            inputLabel.setText("Ticket " + ticket.getStatus() + " — yorum ve internal note yazılamaz.");
+            inputLabel.setForeground(new Color(180, 60, 60));
+            if (internalCheckBox != null) {
+                internalCheckBox.setEnabled(false);
+                internalCheckBox.setSelected(false);
+            }
+        }
+
         // ─── PANEL BİRLEŞTİRME ───────────────────────────────────────────────
         root.add(detailCard);
         root.add(commentsTitle);

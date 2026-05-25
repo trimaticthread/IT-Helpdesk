@@ -13,6 +13,7 @@ import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.mapper.TicketMapper;
 import com.helpdesk.application.service.TicketService;
 import com.helpdesk.domain.entity.Category;
+import com.helpdesk.domain.entity.Group;
 import com.helpdesk.domain.entity.Ticket;
 import com.helpdesk.domain.entity.User;
 import com.helpdesk.domain.enums.TicketPriority;
@@ -105,6 +106,17 @@ public class TicketServiceImpl implements TicketService {
         User agent = new User();
         agent.setId(agentId);
         ticket.setAssignee(agent);
+        ticketDAO.update(ticket);
+        return TicketMapper.toDTO(ticket);
+    }
+
+    @Override
+    public TicketDTO assignGroup(Long ticketId, Long groupId) {
+        Ticket ticket = ticketDAO.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
+        Group group = new Group();
+        group.setId(groupId);
+        ticket.setGroup(group);
         ticketDAO.update(ticket);
         return TicketMapper.toDTO(ticket);
     }

@@ -71,6 +71,15 @@ public class TicketController {
                 .collect(java.util.stream.Collectors.toList());
     }
 
+    /** Agent'a atanmış TÜM ticket'ları döndürür (showResolved=true için — CLOSED hariç). */
+    public List<TicketDTO> getAllAssignedTickets() {
+        Long userId = SessionManager.getCurrentUser().getId();
+        return ticketService.findByAssigneeId(userId)
+                .stream()
+                .filter(t -> !"CLOSED".equals(t.getStatus()))
+                .collect(java.util.stream.Collectors.toList());
+    }
+
     public List<CommentDTO> getComments(Long ticketId) {
         return commentService.findByTicketId(ticketId);
     }
@@ -100,6 +109,11 @@ public class TicketController {
 
     public TicketDTO assignTicket(Long ticketId, Long agentId) {
         return ticketService.assignTicket(ticketId, agentId);
+    }
+
+    /** Ticket'ı bir gruba atar (group_id günceller). */
+    public TicketDTO assignTicketToGroup(Long ticketId, Long groupId) {
+        return ticketService.assignGroup(ticketId, groupId);
     }
 
     public void deleteTicket(Long ticketId) {

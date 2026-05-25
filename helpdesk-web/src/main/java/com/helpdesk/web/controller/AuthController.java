@@ -10,7 +10,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.ResponseBody;
 
 import java.util.Optional;
 
@@ -55,14 +54,6 @@ public class AuthController {
     public AuthController(AuthService authService, UserService userService) {
         this.authService = authService;
         this.userService = userService;
-    }
-
-    // ── TEST endpoint — JSP'ye gitmiyor, sadece "OK" döner ───────────────────
-    // Sorun çözüldükten sonra bu metodu sil.
-    @GetMapping("/ping")
-    @ResponseBody // View'a gitme, direkt HTTP response'a yaz
-    public String ping() {
-        return "pong — AuthController calisiyor!";
     }
 
     // ── GET /login ────────────────────────────────────────────────────────────

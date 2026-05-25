@@ -10,6 +10,7 @@ import java.awt.Font;
 
 import javax.swing.BorderFactory;
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
@@ -39,17 +40,30 @@ public class CustomerDashboardFrame extends JFrame {
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
+    private final com.helpdesk.desktop.controller.CategoryController categoryController;
+    private final com.helpdesk.desktop.controller.DepartmentController departmentController;
+    private final com.helpdesk.desktop.controller.GroupController groupController;
+    private final com.helpdesk.desktop.controller.SlaController slaController;
     private DefaultTableModel tableModel;
     // Secili satirin ticket ID'sini okumak icin field olarak tutulur
     private JTable ticketTable;
     // Ticket listesi — ViewTicketDialog'a DTO gecmek icin hafizada tutulur
     private java.util.List<com.helpdesk.application.dto.TicketDTO> currentTickets = new java.util.ArrayList<>();
+    private boolean showResolved = false;
 
     public CustomerDashboardFrame(AuthController authController, TicketController ticketController,
-            UserController userController) {
+            UserController userController,
+            com.helpdesk.desktop.controller.CategoryController categoryController,
+            com.helpdesk.desktop.controller.DepartmentController departmentController,
+            com.helpdesk.desktop.controller.GroupController groupController,
+            com.helpdesk.desktop.controller.SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
+        this.categoryController = categoryController;
+        this.departmentController = departmentController;
+        this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
         loadTickets();
     }
@@ -99,7 +113,7 @@ public class CustomerDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -131,8 +145,14 @@ public class CustomerDashboardFrame extends JFrame {
         refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> loadTickets());
 
+        JCheckBox showResolvedCheck = new JCheckBox("Show Resolved");
+        showResolvedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        showResolvedCheck.setOpaque(false);
+        showResolvedCheck.addActionListener(e -> { showResolved = showResolvedCheck.isSelected(); loadTickets(); });
+
         toolbar.add(newTicketButton);
         toolbar.add(refreshButton);
+        toolbar.add(showResolvedCheck);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
         // Sadece bu kullanıcının ticket'larını gösterir (loadTickets → getMyTickets)
@@ -178,7 +198,7 @@ public class CustomerDashboardFrame extends JFrame {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Zebra satır renklendirmesi + sol padding
+        // Zebra + RESOLVED/CLOSED satırları gri (Customer: status index=2, no ID col)
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -186,7 +206,14 @@ public class CustomerDashboardFrame extends JFrame {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
                 if (!isSelected) {
-                    setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                    Object status = tableModel.getValueAt(row, 2);
+                    if ("RESOLVED".equals(status) || "CLOSED".equals(status)) {
+                        setBackground(new Color(240, 240, 240));
+                        setForeground(Color.GRAY);
+                    } else {
+                        setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                        setForeground(Color.BLACK);
+                    }
                 }
                 return this;
             }
@@ -228,9 +255,13 @@ public class CustomerDashboardFrame extends JFrame {
             }}
 
     private void loadTickets() {
-        // Sadece bu müşteriye ait, CLOSED olmayan ticket'lar çekilir
         currentTickets = ticketController.getMyTickets();
-        tableModel.setRowCount(0); // Tabloyu sıfırla
+        if (!showResolved) {
+            currentTickets = currentTickets.stream()
+                    .filter(t -> !"RESOLVED".equals(t.getStatus()) && !"CLOSED".equals(t.getStatus()))
+                    .collect(java.util.stream.Collectors.toList());
+        }
+        tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),

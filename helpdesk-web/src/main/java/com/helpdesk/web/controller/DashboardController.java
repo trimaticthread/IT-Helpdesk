@@ -1,65 +1,53 @@
 package com.helpdesk.web.controller;
 
+import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.dto.UserDTO;
+import com.helpdesk.application.service.TicketService;
 import com.helpdesk.web.util.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 
-/**
- * ── DashboardController ──────────────────────────────────────────────────────
- *
- * /dashboard URL'ini yöneten Spring MVC Controller.
- *
- * Kullanıcının rolüne göre doğru dashboard view'ini döner:
- *   ADMIN      → "admin/dashboard"      →  /WEB-INF/jsp/admin/dashboard.jsp
- *   SUPERVISOR → "supervisor/dashboard" →  /WEB-INF/jsp/supervisor/dashboard.jsp
- *   AGENT      → "agent/dashboard"      →  /WEB-INF/jsp/agent/dashboard.jsp
- *   CUSTOMER   → "customer/dashboard"   →  /WEB-INF/jsp/customer/dashboard.jsp
- *
- * AuthFilter zaten giriş yapılmamış kullanıcıları /login'e gönderiyor.
- * Yine de null kontrolü var — savunmacı programlama (defensive programming).
- * ─────────────────────────────────────────────────────────────────────────────
- */
-@Controller // Spring bu sınıfı HTTP controller olarak tanır
+import java.util.List;
+
+@Controller
 public class DashboardController {
 
-    /**
-     * GET /dashboard → Kullanıcının rolüne göre uygun JSP'yi döndür.
-     *
-     * return "admin/dashboard" demek:
-     *   /WEB-INF/jsp/ + admin/dashboard + .jsp = /WEB-INF/jsp/admin/dashboard.jsp
-     *
-     * return "redirect:/login" demek:
-     *   302 yönlendirme → tarayıcı /login'e gider
-     */
-    @GetMapping("/dashboard") // GET /dashboard → bu metodu çalıştır
-    public String dashboard(HttpServletRequest req) {
+    private final TicketService ticketService;
 
-        // Session'dan giriş yapmış kullanıcıyı al
+    public DashboardController(TicketService ticketService) {
+        this.ticketService = ticketService;
+    }
+
+    @GetMapping("/dashboard")
+    public String dashboard(HttpServletRequest req, Model model) {
         UserDTO user = SessionUtil.getUser(req);
+        if (user == null) return "redirect:/login";
 
-        // Kullanıcı yoksa (session süresi dolmuşsa) login'e at
-        if (user == null) {
-            return "redirect:/login";
-        }
-
-        // Kullanıcının rolüne göre doğru JSP'yi seç
         switch (user.getRole()) {
             case "ADMIN":
-                return "admin/dashboard";       // /WEB-INF/jsp/admin/dashboard.jsp
+                return "admin/dashboard";
 
             case "SUPERVISOR":
-                return "supervisor/dashboard";  // /WEB-INF/jsp/supervisor/dashboard.jsp
+                return "supervisor/dashboard";
 
             case "AGENT":
-                return "agent/dashboard";       // /WEB-INF/jsp/agent/dashboard.jsp
+                return "agent/dashboard";
 
             case "CUSTOMER":
-                return "customer/dashboard";    // /WEB-INF/jsp/customer/dashboard.jsp
+                // Customer dashboard'a ticket istatistiklerini geçir
+                try {
+                    List<TicketDTO> tickets = ticketService.findByRequesterId(user.getId());
+                    long open     = tickets.stream().filter(t -> !"CLOSED".equals(t.getStatus()) && !"RESOLVED".equals(t.getStatus())).count();
+                    long resolved = tickets.stream().filter(t -> "RESOLVED".equals(t.getStatus()) || "CLOSED".equals(t.getStatus())).count();
+                    model.addAttribute("totalTickets",    tickets.size());
+                    model.addAttribute("openTickets",     open);
+                    model.addAttribute("resolvedTickets", resolved);
+                } catch (Exception ignored) {}
+                return "customer/dashboard";
 
             default:
-                // Tanımlanmamış rol — erişimi engelle
                 return "redirect:/access-denied";
         }
     }

@@ -1,0 +1,79 @@
+<%@ page contentType="text/html;charset=UTF-8" language="java" %>
+<%@ taglib prefix="c" uri="jakarta.tags.core" %>
+<%@ taglib prefix="fn" uri="jakarta.tags.functions" %>
+<%@ include file="/WEB-INF/jsp/common/layout.jsp" %>
+
+<div class="page-header">
+    <h1>My Tickets</h1>
+    <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">+ New Ticket</a>
+</div>
+
+<c:choose>
+    <c:when test="${empty tickets}">
+        <div class="empty-state">
+            <h3>No tickets yet</h3>
+            <p>You haven't submitted any support requests yet.</p>
+            <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">Create your first ticket</a>
+        </div>
+    </c:when>
+    <c:otherwise>
+        <div class="table-wrapper">
+            <table>
+                <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Title</th>
+                        <th>Category</th>
+                        <th>Priority</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th></th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <c:forEach var="ticket" items="${tickets}">
+                        <tr>
+                            <td style="color:#7a8ea0; font-size:12px;">
+                                <c:out value="${ticket.ticketNumber}"/>
+                            </td>
+                            <td>
+                                <a href="${pageContext.request.contextPath}/tickets/${ticket.id}"
+                                   style="color:#2962ff; text-decoration:none; font-weight:600;">
+                                    <c:out value="${ticket.title}"/>
+                                </a>
+                            </td>
+                            <td>
+                                <c:out value="${not empty ticket.categoryName ? ticket.categoryName : '—'}"/>
+                            </td>
+                            <td>
+                                <%-- Priority badge --%>
+                                <span class="badge badge-${fn:toLowerCase(ticket.priority)}">
+                                    <c:out value="${ticket.priority}"/>
+                                </span>
+                            </td>
+                            <td>
+                                <%-- Status badge --%>
+                                <span class="badge badge-${fn:toLowerCase(ticket.status)}">
+                                    <c:out value="${ticket.status}"/>
+                                </span>
+                            </td>
+                            <td style="color:#7a8ea0; font-size:12px;">
+                                <c:out value="${ticket.createdAt}"/>
+                            </td>
+                            <td>
+                                <a href="${pageContext.request.contextPath}/tickets/${ticket.id}"
+                                   class="btn btn-secondary" style="padding:4px 12px; font-size:12px;">
+                                    View
+                                </a>
+                            </td>
+                        </tr>
+                    </c:forEach>
+                </tbody>
+            </table>
+        </div>
+    </c:otherwise>
+</c:choose>
+
+</div>
+</body>
+</html>
