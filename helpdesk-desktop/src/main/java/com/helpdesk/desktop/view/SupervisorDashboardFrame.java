@@ -216,11 +216,18 @@ public class SupervisorDashboardFrame extends JFrame {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Satır seçilince "Change Status" ve "Assign Ticket" aktif olur
+        // Satır seçilince butonlar güncellenir — CLOSED satırda Change Status pasif kalır
         ticketTable.getSelectionModel().addListSelectionListener(e -> {
-            boolean selected = ticketTable.getSelectedRow() != -1;
-            changeStatusButton.setEnabled(selected);
-            assignButton.setEnabled(selected);
+            int selectedRow = ticketTable.getSelectedRow();
+            if (selectedRow == -1) {
+                changeStatusButton.setEnabled(false);
+                assignButton.setEnabled(false);
+                return;
+            }
+            String status = selectedRow < currentTickets.size()
+                    ? currentTickets.get(selectedRow).getStatus() : "";
+            changeStatusButton.setEnabled(!"CLOSED".equals(status));
+            assignButton.setEnabled(!"CLOSED".equals(status));
         });
 
         // Çift tıklamada ViewTicketDialog açılır — supervisor agent gibi dahili yorumları görebilir
@@ -427,42 +434,22 @@ public class SupervisorDashboardFrame extends JFrame {
         if (row == -1) return;
         Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
-        // 1. Adım: Grup seç
-        List<com.helpdesk.domain.entity.Group> groups = groupController.getAllGroups();
-        if (groups.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Sistemde tanımlı grup yok.", "Grup Yok", JOptionPane.WARNING_MESSAGE);
+        // Sistemdeki tüm AGENT rolündeki kullanıcıları listele
+        List<com.helpdesk.application.dto.UserDTO> agents = ticketController.getAgents();
+        if (agents.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Sistemde aktif agent bulunamadı.", "Agent Yok", JOptionPane.WARNING_MESSAGE);
             return;
         }
-        com.helpdesk.domain.entity.Group selectedGroup =
-                (com.helpdesk.domain.entity.Group) JOptionPane.showInputDialog(
-                        this, "1. Adım: Grup seçin:", "Ticket Ata — Grup",
+
+        com.helpdesk.application.dto.UserDTO selected =
+                (com.helpdesk.application.dto.UserDTO) JOptionPane.showInputDialog(
+                        this, "Agent seçin:", "Ticket Ata",
                         JOptionPane.PLAIN_MESSAGE, null,
-                        groups.toArray(), groups.get(0));
-        if (selectedGroup == null) return;
-
-        // 2. Adım: O gruptaki agent'ları listele
-        List<com.helpdesk.domain.entity.User> members = groupController.getUsersInGroup(selectedGroup.getId());
-        if (members.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Bu grupta kayıtlı kullanıcı yok.", "Kullanıcı Yok", JOptionPane.WARNING_MESSAGE);
-            return;
-        }
-
-        // User nesnelerini gösterilebilir formata çevir
-        String[] memberLabels = members.stream()
-                .map(u -> u.getId() + " — " + u.getFirstName() + " " + u.getLastName())
-                .toArray(String[]::new);
-
-        String selectedLabel = (String) JOptionPane.showInputDialog(
-                this, "2. Adım: Agent seçin (" + selectedGroup.getName() + "):", "Ticket Ata — Agent",
-                JOptionPane.PLAIN_MESSAGE, null, memberLabels, memberLabels[0]);
-        if (selectedLabel == null) return;
-
-        Long agentId = Long.parseLong(selectedLabel.split(" — ")[0]);
+                        agents.toArray(), agents.get(0));
+        if (selected == null) return;
 
         try {
-            ticketController.assignTicket(ticketId, agentId);
-            // group_id güncelle
-            ticketController.assignTicketToGroup(ticketId, selectedGroup.getId());
+            ticketController.assignTicket(ticketId, selected.getId());
             loadTickets();
         } catch (Exception ex) {
             JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);

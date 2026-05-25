@@ -35,4 +35,7 @@ public class Group {
 
     public Boolean getIsActive() { return isActive; }
     public void setIsActive(Boolean isActive) { this.isActive = isActive; }
+
+    @Override
+    public String toString() { return name != null ? name : ""; }
 }

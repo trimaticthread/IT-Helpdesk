@@ -201,9 +201,17 @@ public class AgentDashboardFrame extends JFrame {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Tablo seçim dinleyicisi — satır seçilirse "Change Status" aktif olur
-        ticketTable.getSelectionModel().addListSelectionListener(e
-                -> changeStatusButton.setEnabled(ticketTable.getSelectedRow() != -1));
+        // Tablo seçim dinleyicisi — RESOLVED/CLOSED satır seçilirse buton pasif kalır
+        ticketTable.getSelectionModel().addListSelectionListener(e -> {
+            int selectedRow = ticketTable.getSelectedRow();
+            if (selectedRow == -1) {
+                changeStatusButton.setEnabled(false);
+                return;
+            }
+            String status = selectedRow < currentTickets.size()
+                    ? currentTickets.get(selectedRow).getStatus() : "";
+            changeStatusButton.setEnabled(!"RESOLVED".equals(status) && !"CLOSED".equals(status));
+        });
 
         // Çift tıklamada ViewTicketDialog açılır — agent modu (isAgent=true)
         // Dahili yorumlar görünür + "Internal note" checkbox aktif
@@ -280,13 +288,22 @@ public class AgentDashboardFrame extends JFrame {
         if (row == -1) return;
         Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
+        // Mevcut status'u bul
+        TicketStatus currentStatus = null;
+        try { currentStatus = TicketStatus.valueOf(currentTickets.get(row).getStatus()); } catch (Exception ignored) {}
+
+        // RESOLVED veya CLOSED ticket agent tarafından değiştirilemez
+        if (currentStatus == TicketStatus.RESOLVED || currentStatus == TicketStatus.CLOSED) {
+            JOptionPane.showMessageDialog(this,
+                    "This ticket is " + currentStatus + " and cannot be modified.",
+                    "Locked", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+
         TicketStatus[] options = {
             TicketStatus.IN_PROGRESS, TicketStatus.PENDING, TicketStatus.RESOLVED
         };
 
-        // Mevcut status'u bul, default olarak göster
-        TicketStatus currentStatus = null;
-        try { currentStatus = TicketStatus.valueOf(currentTickets.get(row).getStatus()); } catch (Exception ignored) {}
         final TicketStatus defaultOption = java.util.Arrays.asList(options).contains(currentStatus)
                 ? currentStatus : options[0];
 

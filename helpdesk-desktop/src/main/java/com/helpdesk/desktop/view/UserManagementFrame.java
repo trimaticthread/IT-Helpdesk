@@ -1,6 +1,7 @@
 package com.helpdesk.desktop.view;
 
 import com.helpdesk.application.dto.UserDTO;
+import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.UserController;
 
 import javax.swing.*;
@@ -27,11 +28,13 @@ import java.util.List;
 public class UserManagementFrame extends JFrame {
 
     private final UserController userController;
+    private final DepartmentController departmentController;
     private DefaultTableModel tableModel;
     private JTable userTable;
 
-    public UserManagementFrame(UserController userController) {
+    public UserManagementFrame(UserController userController, DepartmentController departmentController) {
         this.userController = userController;
+        this.departmentController = departmentController;
         initUI();
         loadUsers();
     }
@@ -181,7 +184,7 @@ public class UserManagementFrame extends JFrame {
     }
 
     private void openCreateUserDialog() {
-        CreateUserDialog dialog = new CreateUserDialog(this, userController);
+        CreateUserDialog dialog = new CreateUserDialog(this, userController, departmentController);
         dialog.setVisible(true);
         if (dialog.isCreated()) {
             loadUsers();
@@ -211,7 +214,7 @@ public class UserManagementFrame extends JFrame {
                 .filter(u -> u.getId().equals(id))
                 .findFirst()
                 .ifPresent(u -> {
-                    EditUserDialog dialog = new EditUserDialog(this, userController, u);
+                    EditUserDialog dialog = new EditUserDialog(this, userController, departmentController, u);
                     dialog.setVisible(true);
                     if (dialog.isUpdated()) loadUsers();
                 });
