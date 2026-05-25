@@ -35,18 +35,32 @@ public class SupervisorDashboardFrame extends JFrame {
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
+    private final com.helpdesk.desktop.controller.CategoryController categoryController;
+    private final com.helpdesk.desktop.controller.DepartmentController departmentController;
+    private final com.helpdesk.desktop.controller.GroupController groupController;
+    private final com.helpdesk.desktop.controller.SlaController slaController;
     private DefaultTableModel tableModel;
     private JTable ticketTable;
     private JPanel reportsPanel; // Reports sekmesi içeriği buraya eklenir/sıfırlanır
     // ViewTicketDialog ve Assign Ticket için DTO listesi hafızada tutulur
     private java.util.List<TicketDTO> currentTickets = new java.util.ArrayList<>();
+    private boolean showResolved = false;
+    private boolean showClosed = false;
 
     public SupervisorDashboardFrame(AuthController authController,
                                     TicketController ticketController,
-                                    UserController userController) {
+                                    UserController userController,
+                                    com.helpdesk.desktop.controller.CategoryController categoryController,
+                                    com.helpdesk.desktop.controller.DepartmentController departmentController,
+                                    com.helpdesk.desktop.controller.GroupController groupController,
+                                    com.helpdesk.desktop.controller.SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
+        this.categoryController = categoryController;
+        this.departmentController = departmentController;
+        this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
         loadTickets();
     }
@@ -92,7 +106,7 @@ public class SupervisorDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -156,9 +170,22 @@ public class SupervisorDashboardFrame extends JFrame {
         assignButton.setEnabled(false); // Satır seçilmeden pasif kalır
         assignButton.addActionListener(e -> openAssignDialog());
 
+        JCheckBox showResolvedCheck = new JCheckBox("Show Resolved");
+        showResolvedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        showResolvedCheck.setOpaque(false);
+        showResolvedCheck.addActionListener(e -> { showResolved = showResolvedCheck.isSelected(); loadTickets(); });
+
+        JCheckBox showClosedCheck = new JCheckBox("Show Closed");
+        showClosedCheck.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        showClosedCheck.setOpaque(false);
+        showClosedCheck.setForeground(new Color(120, 120, 120));
+        showClosedCheck.addActionListener(e -> { showClosed = showClosedCheck.isSelected(); loadTickets(); });
+
         toolbar.add(refreshButton);
         toolbar.add(changeStatusButton);
         toolbar.add(assignButton);
+        toolbar.add(showResolvedCheck);
+        toolbar.add(showClosedCheck);
         panel.add(toolbar, BorderLayout.NORTH);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
@@ -215,14 +242,23 @@ public class SupervisorDashboardFrame extends JFrame {
             }
         });
 
-        // Zebra satır renklendirmesi
+        // Zebra + RESOLVED/CLOSED satırları gri (Supervisor: status index=3)
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
                     boolean isSelected, boolean hasFocus, int row, int col) {
                 super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, col);
                 setBorder(new EmptyBorder(0, 10, 0, 10));
-                if (!isSelected) setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                if (!isSelected) {
+                    Object status = tableModel.getValueAt(row, 3);
+                    if ("RESOLVED".equals(status) || "CLOSED".equals(status)) {
+                        setBackground(new Color(240, 240, 240));
+                        setForeground(Color.GRAY);
+                    } else {
+                        setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
+                        setForeground(Color.BLACK);
+                    }
+                }
                 return this;
             }
         };
@@ -343,15 +379,32 @@ public class SupervisorDashboardFrame extends JFrame {
     private void openChangeStatusDialog() {
         int row = ticketTable.getSelectedRow();
         if (row == -1) return;
-        Long ticketId = (Long) tableModel.getValueAt(row, 0); // Gizli ID kolonu
+        Long ticketId = (Long) tableModel.getValueAt(row, 0);
+
+        TicketStatus currentStatus = null;
+        try { currentStatus = TicketStatus.valueOf(currentTickets.get(row).getStatus()); } catch (Exception ignored) {}
+
+        // CLOSED ticket değiştirilemez
+        if (currentStatus == TicketStatus.CLOSED) {
+            JOptionPane.showMessageDialog(this,
+                    "This ticket is CLOSED and cannot be modified.",
+                    "Locked", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
 
         TicketStatus[] options = {
             TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.PENDING,
             TicketStatus.RESOLVED, TicketStatus.CLOSED
         };
+
+        final TicketStatus defaultOption = java.util.Arrays.asList(options).contains(currentStatus)
+                ? currentStatus : options[0];
+
         TicketStatus selected = (TicketStatus) JOptionPane.showInputDialog(
-                this, "Select new status:", "Change Status",
-                JOptionPane.PLAIN_MESSAGE, null, options, options[0]);
+                this,
+                "Current status: " + (currentStatus != null ? currentStatus : "—") + "\nSelect new status:",
+                "Change Status",
+                JOptionPane.PLAIN_MESSAGE, null, options, defaultOption);
 
         if (selected != null) {
             try {
@@ -372,43 +425,58 @@ public class SupervisorDashboardFrame extends JFrame {
     private void openAssignDialog() {
         int row = ticketTable.getSelectedRow();
         if (row == -1) return;
-        Long ticketId = (Long) tableModel.getValueAt(row, 0); // Gizli ID kolonu
+        Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
-        // AGENT rolündeki aktif kullanıcılar dropdown'a yüklenir
-        List<com.helpdesk.application.dto.UserDTO> agents = ticketController.getAgents();
-        if (agents.isEmpty()) {
-            JOptionPane.showMessageDialog(this,
-                    "No active agents found in the system.",
-                    "No Agents", JOptionPane.WARNING_MESSAGE);
+        // 1. Adım: Grup seç
+        List<com.helpdesk.domain.entity.Group> groups = groupController.getAllGroups();
+        if (groups.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Sistemde tanımlı grup yok.", "Grup Yok", JOptionPane.WARNING_MESSAGE);
+            return;
+        }
+        com.helpdesk.domain.entity.Group selectedGroup =
+                (com.helpdesk.domain.entity.Group) JOptionPane.showInputDialog(
+                        this, "1. Adım: Grup seçin:", "Ticket Ata — Grup",
+                        JOptionPane.PLAIN_MESSAGE, null,
+                        groups.toArray(), groups.get(0));
+        if (selectedGroup == null) return;
+
+        // 2. Adım: O gruptaki agent'ları listele
+        List<com.helpdesk.domain.entity.User> members = groupController.getUsersInGroup(selectedGroup.getId());
+        if (members.isEmpty()) {
+            JOptionPane.showMessageDialog(this, "Bu grupta kayıtlı kullanıcı yok.", "Kullanıcı Yok", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
-        // Agent seçim dropdown'u — UserDTO.getFullName() gösterilir
-        com.helpdesk.application.dto.UserDTO selected =
-                (com.helpdesk.application.dto.UserDTO) JOptionPane.showInputDialog(
-                        this,
-                        "Select agent to assign:",
-                        "Assign Ticket",
-                        JOptionPane.PLAIN_MESSAGE,
-                        null,
-                        agents.toArray(),
-                        agents.get(0));
+        // User nesnelerini gösterilebilir formata çevir
+        String[] memberLabels = members.stream()
+                .map(u -> u.getId() + " — " + u.getFirstName() + " " + u.getLastName())
+                .toArray(String[]::new);
 
-        if (selected != null) {
-            try {
-                ticketController.assignTicket(ticketId, selected.getId());
-                loadTickets();
-            } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(),
-                        "Error", JOptionPane.ERROR_MESSAGE);
-            }
+        String selectedLabel = (String) JOptionPane.showInputDialog(
+                this, "2. Adım: Agent seçin (" + selectedGroup.getName() + "):", "Ticket Ata — Agent",
+                JOptionPane.PLAIN_MESSAGE, null, memberLabels, memberLabels[0]);
+        if (selectedLabel == null) return;
+
+        Long agentId = Long.parseLong(selectedLabel.split(" — ")[0]);
+
+        try {
+            ticketController.assignTicket(ticketId, agentId);
+            // group_id güncelle
+            ticketController.assignTicketToGroup(ticketId, selectedGroup.getId());
+            loadTickets();
+        } catch (Exception ex) {
+            JOptionPane.showMessageDialog(this, "Error: " + ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
         }
     }
 
     private void loadTickets() {
-        // CLOSED ticket'lar sadece Admin'e görünür; Supervisor aktif ticket'ları yönetir
         currentTickets = ticketController.getAllTickets().stream()
-                .filter(t -> !"CLOSED".equals(t.getStatus()))
+                .filter(t -> {
+                    String s = t.getStatus();
+                    if ("CLOSED".equals(s))   return showClosed;
+                    if ("RESOLVED".equals(s)) return showResolved;
+                    return true; // OPEN, IN_PROGRESS, PENDING her zaman görünür
+                })
                 .collect(Collectors.toList());
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {

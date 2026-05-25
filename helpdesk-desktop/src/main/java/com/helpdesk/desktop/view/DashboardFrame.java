@@ -3,6 +3,10 @@ package com.helpdesk.desktop.view;
 import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.dto.UserDTO;
 import com.helpdesk.desktop.controller.AuthController;
+import com.helpdesk.desktop.controller.CategoryController;
+import com.helpdesk.desktop.controller.DepartmentController;
+import com.helpdesk.desktop.controller.GroupController;
+import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
 import com.helpdesk.desktop.security.SessionManager;
@@ -19,39 +23,44 @@ import java.util.stream.Collectors;
 
 /**
  * ADMIN rolune ozel ana dashboard ekrani.
- * Sistemin tam yetkili panelidir; ticket'lar ve kullanicilar uzerinde
+ * Sistemin tam yetkili panelidir; ticket'lar ve yönetim işlemleri üzerinde
  * tam CRUD yetkisi bulunur.
  *
  * Sekmeler:
- * - Tickets : Tum ticket'lari listeler. Durum degistirme, atama, silme ve
- *             goruntuleme butonlari bulunur. Cift tiklama ile detay acilir.
- * - Reports : Duruma, onceliğe, kategoriye ve atanan agente gore istatistikler.
- *
- * Toolbar butonlari:
- * - "+ New Ticket"   → CreateTicketDialog'u acar.
- * - "Change Status"  → Secili ticket'in durumunu gunceller (pasif basta).
- * - "Assign Ticket"  → Secili ticket'i bir agente atar (pasif basta).
- * - "Delete Ticket"  → Onay sonrasi secili ticket'i siler (pasif basta).
- * - "Refresh"        → Tabloyu veritabanindan yeniden yukler.
- * - "Users"          → UserManagementFrame'i acar.
+ * - Tickets        : Tüm ticket'ları listeler. Durum değiştirme, atama, silme.
+ * - Reports        : Duruma, önceliğe, kategoriye ve atanan agente göre istatistikler.
+ * - Users          : Kullanıcı yönetimi (oluşturma, düzenleme, şifre sıfırlama).
+ * - Categories     : Kategori CRUD.
+ * - Departments    : Departman CRUD.
+ * - Groups         : Grup yönetimi (kullanıcı atama).
+ * - SLA Settings   : SLA kuralları.
  */
 public class DashboardFrame extends JFrame {
 
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
+    private final CategoryController categoryController;
+    private final DepartmentController departmentController;
+    private final GroupController groupController;
+    private final SlaController slaController;
+
     private DefaultTableModel tableModel;
     private JTable ticketTable;
-    // Reports sekmesi icerigi dinamik olarak buraya eklenir
     private JPanel reportsPanel;
-    // ViewTicketDialog ve islem butonlari icin DTO listesi hafizada tutulur
     private List<TicketDTO> currentTickets = new java.util.ArrayList<>();
 
     public DashboardFrame(AuthController authController, TicketController ticketController,
-                          UserController userController) {
+                          UserController userController, CategoryController categoryController,
+                          DepartmentController departmentController, GroupController groupController,
+                          SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
+        this.categoryController = categoryController;
+        this.departmentController = departmentController;
+        this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
         loadTickets();
     }
@@ -62,13 +71,11 @@ public class DashboardFrame extends JFrame {
         setDefaultCloseOperation(EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        // ─── ANA PANEL ───────────────────────────────────────────────────────
         JPanel root = new JPanel(new BorderLayout());
         root.setBackground(new Color(245, 247, 250));
         setContentPane(root);
 
         // ─── ÜST BAR ─────────────────────────────────────────────────────────
-        // Koyu lacivert bar; sol=uygulama adı + rol, sağ=kullanıcı adı + çıkış
         JPanel topBar = new JPanel(new BorderLayout());
         topBar.setBackground(new Color(30, 40, 60));
         topBar.setBorder(new EmptyBorder(12, 20, 12, 20));
@@ -86,7 +93,6 @@ public class DashboardFrame extends JFrame {
         welcomeLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         welcomeLabel.setForeground(new Color(180, 190, 210));
 
-        // Çıkış butonu — oturumu kapatır ve LoginFrame'e döner
         JButton logoutButton = new JButton("Logout");
         logoutButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         logoutButton.setBackground(new Color(60, 70, 95));
@@ -97,22 +103,32 @@ public class DashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController,
+                    categoryController, departmentController, groupController, slaController)
+                    .setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
         rightTop.add(logoutButton);
         topBar.add(appTitle, BorderLayout.WEST);
         topBar.add(rightTop, BorderLayout.EAST);
-
         root.add(topBar, BorderLayout.NORTH);
 
         // ─── SEKMELER ────────────────────────────────────────────────────────
-        // Tickets: tablo yönetimi | Reports: istatistik özeti
         JTabbedPane tabs = new JTabbedPane();
         tabs.setFont(new Font("Segoe UI", Font.PLAIN, 13));
+        tabs.setBorder(new EmptyBorder(8, 8, 8, 8));
+
+        // Operasyonel sekmeler
         tabs.addTab("Tickets", buildTicketsPanel());
         tabs.addTab("Reports", buildReportsPanel());
+
+        // Yönetim sekmeleri
+        tabs.addTab("Users",       new UserManagementPanel(userController, departmentController));
+        tabs.addTab("Categories",  new CategoryManagementPanel(categoryController));
+        tabs.addTab("Departments", new DepartmentManagementPanel(departmentController));
+        tabs.addTab("Groups",      new GroupManagementPanel(groupController, userController));
+        tabs.addTab("SLA Settings", new SlaManagementPanel(slaController));
 
         // Reports sekmesine geçildiğinde istatistikler anında yenilenir
         tabs.addChangeListener(e -> {
@@ -123,9 +139,8 @@ public class DashboardFrame extends JFrame {
     }
 
     /**
-     * "Tickets" sekmesinin icerigini olusturur.
-     * Toolbar butonlari + ticket tablosunu icerir.
-     * Durum degistirme, atama ve silme butonlari satir secilince etkinlesir.
+     * "Tickets" sekmesinin içeriğini oluşturur.
+     * Toolbar butonları + ticket tablosunu içerir.
      */
     private JPanel buildTicketsPanel() {
         JPanel panel = new JPanel(new BorderLayout());
@@ -136,7 +151,6 @@ public class DashboardFrame extends JFrame {
         toolbar.setBackground(new Color(245, 247, 250));
         toolbar.setBorder(new EmptyBorder(4, 12, 0, 12));
 
-        // Yeni ticket butonu — her zaman aktif
         JButton newTicketButton = new JButton("+ New Ticket");
         newTicketButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         newTicketButton.setBackground(new Color(41, 98, 255));
@@ -146,7 +160,6 @@ public class DashboardFrame extends JFrame {
         newTicketButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         newTicketButton.addActionListener(e -> openCreateTicketDialog());
 
-        // Durum değiştir — satır seçilmeden pasif kalır
         JButton changeStatusButton = new JButton("Change Status");
         changeStatusButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         changeStatusButton.setFocusPainted(false);
@@ -155,7 +168,6 @@ public class DashboardFrame extends JFrame {
         changeStatusButton.setEnabled(false);
         changeStatusButton.addActionListener(e -> openChangeStatusDialog());
 
-        // Ticket atama — seçili ticket'ı bir agente atar; satır seçilmeden pasif
         JButton assignButton = new JButton("Assign Ticket");
         assignButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         assignButton.setFocusPainted(false);
@@ -164,7 +176,6 @@ public class DashboardFrame extends JFrame {
         assignButton.setEnabled(false);
         assignButton.addActionListener(e -> openAssignDialog());
 
-        // Ticket silme — kırmızı, onay gerektirir; satır seçilmeden pasif
         JButton deleteButton = new JButton("Delete Ticket");
         deleteButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         deleteButton.setForeground(new Color(200, 50, 50));
@@ -174,7 +185,6 @@ public class DashboardFrame extends JFrame {
         deleteButton.setEnabled(false);
         deleteButton.addActionListener(e -> deleteSelectedTicket());
 
-        // Yenile — tabloyu veritabanından tekrar çeker
         JButton refreshButton = new JButton("Refresh");
         refreshButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         refreshButton.setFocusPainted(false);
@@ -182,24 +192,14 @@ public class DashboardFrame extends JFrame {
         refreshButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         refreshButton.addActionListener(e -> loadTickets());
 
-        // Kullanıcı yönetimi — UserManagementFrame'i yeni pencerede açar
-        JButton usersButton = new JButton("Users");
-        usersButton.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        usersButton.setFocusPainted(false);
-        usersButton.setBorder(BorderFactory.createEmptyBorder(8, 16, 8, 16));
-        usersButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        usersButton.addActionListener(e -> new UserManagementFrame(userController).setVisible(true));
-
         toolbar.add(newTicketButton);
         toolbar.add(changeStatusButton);
         toolbar.add(assignButton);
         toolbar.add(deleteButton);
         toolbar.add(refreshButton);
-        toolbar.add(usersButton);
         panel.add(toolbar, BorderLayout.NORTH);
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
-        // ID kolonu gizli (index=0); Requester kolonu talep sahibini gösterir
         String[] columns = {"ID", "Ticket No", "Title", "Status", "Priority", "Requester", "Category", "Date"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override
@@ -217,18 +217,16 @@ public class DashboardFrame extends JFrame {
         ticketTable.getTableHeader().setBackground(new Color(235, 238, 245));
         ticketTable.getTableHeader().setForeground(new Color(80, 90, 110));
 
-        // ID kolonu (index 0) gizlenir — DB id'si butonlar için saklanır
+        // ID kolonu gizlenir
         ticketTable.getColumnModel().getColumn(0).setMinWidth(0);
         ticketTable.getColumnModel().getColumn(0).setMaxWidth(0);
         ticketTable.getColumnModel().getColumn(0).setWidth(0);
 
-        // Sütun genişlikleri: Ticket No, Title, Status, Priority, Requester, Category, Date
         int[] widths = {0, 110, 220, 100, 80, 140, 120, 100};
         for (int i = 1; i < widths.length; i++) {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
 
-        // Satır seçilince ilgili butonlar etkinleşir
         ticketTable.getSelectionModel().addListSelectionListener(e -> {
             boolean selected = ticketTable.getSelectedRow() != -1;
             changeStatusButton.setEnabled(selected);
@@ -236,7 +234,6 @@ public class DashboardFrame extends JFrame {
             deleteButton.setEnabled(selected);
         });
 
-        // Çift tıklamada ViewTicketDialog açılır — admin dahili yorumları görebilir
         ticketTable.addMouseListener(new java.awt.event.MouseAdapter() {
             @Override
             public void mouseClicked(java.awt.event.MouseEvent e) {
@@ -247,15 +244,14 @@ public class DashboardFrame extends JFrame {
                                 DashboardFrame.this,
                                 currentTickets.get(row),
                                 ticketController,
-                                true  // isAgent=true: admin dahili yorumları görebilir
+                                true
                         ).setVisible(true);
-                        loadTickets(); // Dialog kapandıktan sonra tabloyu yenile
+                        loadTickets();
                     }
                 }
             }
         });
 
-        // Zebra satır renklendirmesi + sol padding
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -289,8 +285,8 @@ public class DashboardFrame extends JFrame {
     }
 
     /**
-     * "Reports" sekmesinin bos container'ini olusturur.
-     * Icerik, sekme acildiginda refreshReports() ile dinamik doldurulur.
+     * "Reports" sekmesinin boş container'ını oluşturur.
+     * İçerik, sekme açıldığında refreshReports() ile dinamik doldurulur.
      */
     private JPanel buildReportsPanel() {
         reportsPanel = new JPanel();
@@ -302,7 +298,6 @@ public class DashboardFrame extends JFrame {
         scroll.setBorder(BorderFactory.createEmptyBorder());
         scroll.getViewport().setBackground(new Color(245, 247, 250));
 
-        // JTabbedPane addTab() bileşen beklediği için bir wrapper kullanıyoruz
         JPanel wrapper = new JPanel(new BorderLayout());
         wrapper.setOpaque(false);
         wrapper.add(scroll, BorderLayout.CENTER);
@@ -310,8 +305,7 @@ public class DashboardFrame extends JFrame {
     }
 
     /**
-     * Reports sekmesini guncel verilerle yeniden doldurur.
-     * Duruma, onceliğe, kategoriye ve atanan agente gore gruplandırma yapar.
+     * Reports sekmesini güncel verilerle yeniden doldurur.
      */
     private void refreshReports() {
         reportsPanel.removeAll();
@@ -319,22 +313,17 @@ public class DashboardFrame extends JFrame {
         List<TicketDTO> all = ticketController.getAllTickets();
         int total = all.size();
 
-        // Gruplamalar — client-side hesaplama, ek backend metodu gerekmez
         Map<String, Long> byStatus = all.stream()
                 .collect(Collectors.groupingBy(TicketDTO::getStatus, Collectors.counting()));
-
         Map<String, Long> byPriority = all.stream()
                 .collect(Collectors.groupingBy(TicketDTO::getPriority, Collectors.counting()));
-
         Map<String, Long> byCategory = all.stream()
                 .filter(t -> t.getCategoryName() != null)
                 .collect(Collectors.groupingBy(TicketDTO::getCategoryName, Collectors.counting()));
-
         Map<String, Long> byAssignee = all.stream()
                 .filter(t -> t.getAssigneeName() != null)
                 .collect(Collectors.groupingBy(TicketDTO::getAssigneeName, Collectors.counting()));
 
-        // ─── RAPOR BAŞLIĞI ────────────────────────────────────────────────────
         JLabel titleLabel = new JLabel("Ticket Reports");
         titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 20));
         titleLabel.setForeground(new Color(30, 40, 60));
@@ -342,28 +331,24 @@ public class DashboardFrame extends JFrame {
         reportsPanel.add(titleLabel);
         reportsPanel.add(Box.createVerticalStrut(20));
 
-        // ─── ÖZET ─────────────────────────────────────────────────────────────
         reportsPanel.add(makeSectionLabel("Summary"));
         reportsPanel.add(makeStatRow("Total Tickets", String.valueOf(total)));
         reportsPanel.add(makeStatRow("Unassigned",
                 String.valueOf(all.stream().filter(t -> t.getAssigneeName() == null).count())));
         reportsPanel.add(Box.createVerticalStrut(20));
 
-        // ─── DURUMA GÖRE ─────────────────────────────────────────────────────
         reportsPanel.add(makeSectionLabel("By Status"));
         for (Map.Entry<String, Long> e : byStatus.entrySet()) {
             reportsPanel.add(makeStatRow(e.getKey(), String.valueOf(e.getValue())));
         }
         reportsPanel.add(Box.createVerticalStrut(20));
 
-        // ─── ÖNCELİĞE GÖRE ───────────────────────────────────────────────────
         reportsPanel.add(makeSectionLabel("By Priority"));
         for (Map.Entry<String, Long> e : byPriority.entrySet()) {
             reportsPanel.add(makeStatRow(e.getKey(), String.valueOf(e.getValue())));
         }
         reportsPanel.add(Box.createVerticalStrut(20));
 
-        // ─── KATEGORİYE GÖRE ─────────────────────────────────────────────────
         reportsPanel.add(makeSectionLabel("By Category"));
         if (byCategory.isEmpty()) {
             reportsPanel.add(makeStatRow("No category data", "-"));
@@ -374,7 +359,6 @@ public class DashboardFrame extends JFrame {
         }
         reportsPanel.add(Box.createVerticalStrut(20));
 
-        // ─── ATANAN AGENTE GÖRE ───────────────────────────────────────────────
         reportsPanel.add(makeSectionLabel("By Assignee"));
         if (byAssignee.isEmpty()) {
             reportsPanel.add(makeStatRow("No assignments yet", "-"));
@@ -388,7 +372,6 @@ public class DashboardFrame extends JFrame {
         reportsPanel.repaint();
     }
 
-    /** Rapor bölüm başlığı — kalın, mavi-gri */
     private JLabel makeSectionLabel(String text) {
         JLabel label = new JLabel(text);
         label.setFont(new Font("Segoe UI", Font.BOLD, 14));
@@ -397,7 +380,6 @@ public class DashboardFrame extends JFrame {
         return label;
     }
 
-    /** Tek istatistik satırı — sol=etiket (sabit genişlik), sağ=mavi değer */
     private JPanel makeStatRow(String label, String value) {
         JPanel row = new JPanel(new FlowLayout(FlowLayout.LEFT, 0, 4));
         row.setBackground(new Color(245, 247, 250));
@@ -426,14 +408,10 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    /**
-     * Secili ticket'in durumunu degistirmek icin JOptionPane dialog'u acar.
-     * Tum TicketStatus degerlerinden secim yapilabilir.
-     */
     private void openChangeStatusDialog() {
         int row = ticketTable.getSelectedRow();
         if (row == -1) return;
-        Long ticketId = (Long) tableModel.getValueAt(row, 0); // Gizli ID kolonu
+        Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
         TicketStatus[] options = {
             TicketStatus.OPEN, TicketStatus.IN_PROGRESS, TicketStatus.PENDING,
@@ -454,10 +432,6 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    /**
-     * Secili ticket'i bir agente atamak icin dialog acar.
-     * Agent listesi TicketController.getAgents() ile cekilir.
-     */
     private void openAssignDialog() {
         int row = ticketTable.getSelectedRow();
         if (row == -1) return;
@@ -491,10 +465,6 @@ public class DashboardFrame extends JFrame {
         }
     }
 
-    /**
-     * Secili ticket'i onay sonrasi kalici olarak siler.
-     * Silme islemi geri alinamaz; onay dialogu zorunludur.
-     */
     private void deleteSelectedTicket() {
         int row = ticketTable.getSelectedRow();
         if (row == -1) return;
@@ -521,7 +491,7 @@ public class DashboardFrame extends JFrame {
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
-                t.getId(),             // Gizli ID — Change Status, Assign, Delete icin
+                t.getId(),
                 t.getTicketNumber(),
                 t.getTitle(),
                 t.getStatus(),

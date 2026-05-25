@@ -68,4 +68,9 @@ public class UserController {
         userService.resetPassword(id);
     }
 
+    /** Kullanicinin bir sonraki giriste sifre degistirmesi gerekip gerekmedigini dondurur. */
+    public boolean isPasswordResetRequired(Long userId) {
+        return userService.isPasswordResetRequired(userId);
+    }
+
 }

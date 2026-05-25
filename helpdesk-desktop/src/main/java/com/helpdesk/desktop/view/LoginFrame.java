@@ -1,6 +1,10 @@
 package com.helpdesk.desktop.view;
 
 import com.helpdesk.desktop.controller.AuthController;
+import com.helpdesk.desktop.controller.CategoryController;
+import com.helpdesk.desktop.controller.DepartmentController;
+import com.helpdesk.desktop.controller.GroupController;
+import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
 import com.helpdesk.desktop.security.SessionManager;
@@ -28,144 +32,182 @@ public class LoginFrame extends JFrame {
     private final AuthController authController;
     private final TicketController ticketController;
     private final UserController userController;
+    private final CategoryController categoryController;
+    private final DepartmentController departmentController;
+    private final GroupController groupController;
+    private final SlaController slaController;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
     private JLabel errorLabel;
 
-    public LoginFrame(AuthController authController, TicketController ticketController, UserController userController) {
+    public LoginFrame(AuthController authController, TicketController ticketController,
+                      UserController userController, CategoryController categoryController,
+                      DepartmentController departmentController, GroupController groupController,
+                      SlaController slaController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
+        this.categoryController = categoryController;
+        this.departmentController = departmentController;
+        this.groupController = groupController;
+        this.slaController = slaController;
         initUI();
     }
 
     private void initUI() {
         setTitle("IT Helpdesk");
-        setSize(420, 380);
+        setSize(420, 460);
         setDefaultCloseOperation(EXIT_ON_CLOSE);
-        setLocationRelativeTo(null); // Ekranın ortasında açılır
-        setResizable(false);         // Boyut sabitlenir
+        setLocationRelativeTo(null);
+        setResizable(false);
 
-        // ─── ANA PANEL ───────────────────────────────────────────────────────
-        // Açık gri arka plan; içindeki beyaz card'ı ön plana çıkarır
-        JPanel root = new JPanel(new GridBagLayout());
-        root.setBackground(new Color(245, 247, 250));
+        JPanel root = new JPanel(new BorderLayout());
         setContentPane(root);
 
-        // ─── LOGIN CARD ──────────────────────────────────────────────────────
-        // Beyaz, kenarlıklı kart; tüm form elemanları bu panelin içinde yer alır
-        JPanel card = new JPanel();
-        card.setLayout(new BoxLayout(card, BoxLayout.Y_AXIS)); // Elemanlar dikey sıralanır
-        card.setBackground(Color.WHITE);
-        card.setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(220, 223, 228), 1), // İnce gri çerçeve
-                new EmptyBorder(36, 40, 36, 40)                              // İç boşluk
-        ));
+        // ─── ÜST BANNER ──────────────────────────────────────────────────────
+        JPanel banner = new JPanel();
+        banner.setBackground(new Color(30, 40, 60));
+        banner.setLayout(new BoxLayout(banner, BoxLayout.Y_AXIS));
+        banner.setBorder(new EmptyBorder(32, 40, 28, 40));
 
-        // ─── BAŞLIK ──────────────────────────────────────────────────────────
-        // Uygulamanın adı — kartın üst ortasında gösterilir
         JLabel titleLabel = new JLabel("IT Helpdesk");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 22));
-        titleLabel.setForeground(new Color(30, 40, 60));
+        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 26));
+        titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // Alt başlık — kullanıcıyı yönlendirici küçük metin
-        JLabel subLabel = new JLabel("Sign in to your account");
+        JLabel subLabel = new JLabel("Destek Talep Sistemi");
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
-        subLabel.setForeground(new Color(120, 130, 150));
+        subLabel.setForeground(new Color(160, 175, 200));
         subLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        // ─── KULLANICI ADI ALANI ─────────────────────────────────────────────
-        // "Kullanici Adi" etiketi — text field'ın üstünde gösterilir
-        JLabel userLabel = new JLabel("Username");
-        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        userLabel.setForeground(new Color(60, 70, 90));
-        userLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        banner.add(titleLabel);
+        banner.add(Box.createVerticalStrut(6));
+        banner.add(subLabel);
 
-        // Kullanıcı adı metin kutusu — handleLogin() içinde .getText() ile okunur
+        root.add(banner, BorderLayout.NORTH);
+
+        // ─── FORM PANEL ───────────────────────────────────────────────────────
+        JPanel form = new JPanel();
+        form.setLayout(new BoxLayout(form, BoxLayout.Y_AXIS));
+        form.setBackground(Color.WHITE);
+        form.setBorder(new EmptyBorder(32, 40, 32, 40));
+
+        form.add(makeFieldLabel("Kullanici Adi"));
+        form.add(Box.createVerticalStrut(5));
         usernameField = new JTextField();
         usernameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         usernameField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         usernameField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(usernameField);
 
-        // ─── ŞİFRE ALANI ─────────────────────────────────────────────────────
-        // "Sifre" etiketi — şifre kutusunun üstünde gösterilir
-        JLabel passLabel = new JLabel("Password");
-        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        passLabel.setForeground(new Color(60, 70, 90));
-        passLabel.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(Box.createVerticalStrut(16));
 
-        // Şifre kutusu — karakterleri nokta olarak gösterir; Enter tuşu da giriş başlatır
+        form.add(makeFieldLabel("Sifre"));
+        form.add(Box.createVerticalStrut(5));
         passwordField = new JPasswordField();
         passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         passwordField.setMaximumSize(new Dimension(Integer.MAX_VALUE, 36));
         passwordField.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(passwordField);
 
-        // ─── GİRİŞ BUTONU ────────────────────────────────────────────────────
-        // Mavi buton — tıklayınca handleLogin() çağrılır ve rol bazlı yönlendirme yapılır
-        JButton loginButton = new JButton("Login");
-        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        form.add(Box.createVerticalStrut(24));
+
+        JButton loginButton = new JButton("Giris Yap");
+        loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         loginButton.setBackground(new Color(41, 98, 255));
         loginButton.setForeground(Color.WHITE);
         loginButton.setFocusPainted(false);
         loginButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
-        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 38));
+        loginButton.setMaximumSize(new Dimension(Integer.MAX_VALUE, 40));
         loginButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        form.add(loginButton);
 
-        // ─── HATA MESAJI ─────────────────────────────────────────────────────
-        // Başta boş görünür; giriş hatası olursa kırmızı mesaj gösterir
+        form.add(Box.createVerticalStrut(8));
+
+        JButton forgotButton = new JButton("Şifremi Unuttum");
+        forgotButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        forgotButton.setForeground(new Color(100, 130, 200));
+        forgotButton.setBorderPainted(false);
+        forgotButton.setContentAreaFilled(false);
+        forgotButton.setFocusPainted(false);
+        forgotButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        forgotButton.setAlignmentX(Component.LEFT_ALIGNMENT);
+        forgotButton.addActionListener(e -> JOptionPane.showMessageDialog(this,
+                "Şifrenizi unuttuysanız lütfen sistem yöneticinize başvurun.\nYönetici şifrenizi geçici olarak sıfırlayacaktır.",
+                "Şifremi Unuttum", JOptionPane.INFORMATION_MESSAGE));
+        form.add(forgotButton);
+
+        form.add(Box.createVerticalStrut(4));
+
         errorLabel = new JLabel(" ");
         errorLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         errorLabel.setForeground(new Color(220, 50, 50));
-        errorLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
+        JPanel errorWrapper = new JPanel(new FlowLayout(FlowLayout.CENTER, 0, 0));
+        errorWrapper.setBackground(Color.WHITE);
+        errorWrapper.setMaximumSize(new Dimension(Integer.MAX_VALUE, 22));
+        errorWrapper.setAlignmentX(Component.LEFT_ALIGNMENT);
+        errorWrapper.add(errorLabel);
+        form.add(errorWrapper);
 
-        // ─── KART DÜZENİ ─────────────────────────────────────────────────────
-        // Elemanlar aralarındaki boşluklarla birlikte dikey sıraya eklenir
-        card.add(titleLabel);
-        card.add(Box.createVerticalStrut(4));
-        card.add(subLabel);
-        card.add(Box.createVerticalStrut(28));
-        card.add(userLabel);
-        card.add(Box.createVerticalStrut(5));
-        card.add(usernameField);
-        card.add(Box.createVerticalStrut(14));
-        card.add(passLabel);
-        card.add(Box.createVerticalStrut(5));
-        card.add(passwordField);
-        card.add(Box.createVerticalStrut(20));
-        card.add(loginButton);
-        card.add(Box.createVerticalStrut(10));
-        card.add(errorLabel);
+        root.add(form, BorderLayout.CENTER);
 
-        // ─── ROOT'A EKLE ──────────────────────────────────────────────────────
-        // GridBagConstraints ile kart hem yatay hem dikey dolduracak şekilde konumlanır
-        GridBagConstraints gbc = new GridBagConstraints();
-        gbc.fill = GridBagConstraints.BOTH;
-        gbc.weightx = 1.0;
-        gbc.insets = new Insets(20, 30, 20, 30);
-        root.add(card, gbc);
+        // ─── ALT BİLGİ ───────────────────────────────────────────────────────
+        JPanel footer = new JPanel();
+        footer.setBackground(new Color(245, 247, 250));
+        footer.setBorder(new EmptyBorder(10, 0, 10, 0));
+        JLabel footerLabel = new JLabel("IT Helpdesk v1.0");
+        footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        footerLabel.setForeground(new Color(160, 170, 185));
+        footer.add(footerLabel);
+        root.add(footer, BorderLayout.SOUTH);
 
-        // Buton tıklaması ve Enter tuşu aynı işlemi çalıştırır
         loginButton.addActionListener(e -> handleLogin());
         passwordField.addActionListener(e -> handleLogin());
+    }
+
+    private JLabel makeFieldLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+        label.setForeground(new Color(60, 70, 90));
+        label.setAlignmentX(Component.LEFT_ALIGNMENT);
+        return label;
     }
 
     private void handleLogin() {
         String username = usernameField.getText().trim();
         String password = new String(passwordField.getPassword());
 
-        if (username.isEmpty() || password.isEmpty()) {
-            errorLabel.setText("Username and password cannot be empty.");
+        if (username.isEmpty() && password.isEmpty()) {
+            errorLabel.setText("Kullanici adi ve sifre bos birakilamaz.");
+            return;
+        }
+        if (username.isEmpty()) {
+            errorLabel.setText("Kullanici adi bos birakilamaz.");
+            return;
+        }
+        if (password.isEmpty()) {
+            errorLabel.setText("Sifre bos birakilamaz.");
             return;
         }
 
+        errorLabel.setText(" ");
         boolean success = authController.login(username, password);
         if (success) {
+            Long userId = SessionManager.getCurrentUser().getId();
+            if (userController.isPasswordResetRequired(userId)) {
+                ChangePasswordDialog cpd = new ChangePasswordDialog(this, userController);
+                cpd.setVisible(true);
+                if (!cpd.isPasswordChanged()) {
+                    // Kullanıcı şifresini değiştirmeden kapattı — login'e geri dön
+                    authController.logout();
+                    return;
+                }
+            }
             dispose();
             openDashboardForRole(SessionManager.getCurrentUser().getRole());
         } else {
-            errorLabel.setText("Invalid username or password.");
+            errorLabel.setText("Kullanici adi veya sifre yanlis.");
             passwordField.setText("");
         }
     }
@@ -177,10 +219,10 @@ public class LoginFrame extends JFrame {
     private void openDashboardForRole(String role) {
         if (role == null) role = "ADMIN";
         switch (role) {
-            case "CUSTOMER" -> new CustomerDashboardFrame(authController, ticketController, userController).setVisible(true);
-            case "AGENT"    -> new AgentDashboardFrame(authController, ticketController, userController).setVisible(true);
-            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController).setVisible(true);
-            default -> new DashboardFrame(authController, ticketController, userController).setVisible(true);
+            case "CUSTOMER"   -> new CustomerDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            case "AGENT"      -> new AgentDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            default           -> new DashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
         }
     }
 }
