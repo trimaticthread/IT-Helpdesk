@@ -7,6 +7,8 @@ import com.helpdesk.application.dto.UserDTO;
 import com.helpdesk.application.service.CategoryService;
 import com.helpdesk.application.service.CommentService;
 import com.helpdesk.application.service.TicketService;
+import com.helpdesk.application.service.UserService;
+import com.helpdesk.domain.enums.TicketStatus;
 import com.helpdesk.web.util.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
@@ -25,24 +27,31 @@ public class TicketController {
     private final TicketService ticketService;
     private final CategoryService categoryService;
     private final CommentService commentService;
+    private final UserService userService;
 
     public TicketController(TicketService ticketService,
                             CategoryService categoryService,
-                            CommentService commentService) {
+                            CommentService commentService,
+                            UserService userService) {
         this.ticketService = ticketService;
         this.categoryService = categoryService;
         this.commentService = commentService;
+        this.userService = userService;
     }
 
     // ── GET /tickets ──────────────────────────────────────────────────────────
     // Customer → kendi ticket'ları | Agent/Supervisor → atanmış/tüm ticket'lar
     @GetMapping("/tickets")
-    public String listTickets(HttpServletRequest req, Model model) {
+    public String listTickets(@RequestParam(required = false) String showResolved,
+                              @RequestParam(required = false) String showClosed,
+                              HttpServletRequest req, Model model) {
         UserDTO user = SessionUtil.getUser(req);
         if (user == null) return "redirect:/login";
 
         try {
             List<TicketDTO> tickets;
+            boolean resolvedChecked = "true".equals(showResolved);
+            boolean closedChecked   = "true".equals(showClosed);
 
             switch (user.getRole()) {
                 case "CUSTOMER":
@@ -50,18 +59,40 @@ public class TicketController {
                     break;
                 case "AGENT":
                     tickets = ticketService.findByAssigneeId(user.getId());
+                    if (!resolvedChecked) {
+                        tickets = tickets.stream()
+                                .filter(t -> !"RESOLVED".equals(t.getStatus()))
+                                .collect(java.util.stream.Collectors.toList());
+                    }
                     break;
                 case "SUPERVISOR":
                 case "ADMIN":
                     tickets = ticketService.findAll();
+                    if (!resolvedChecked) {
+                        tickets = tickets.stream()
+                                .filter(t -> !"RESOLVED".equals(t.getStatus()))
+                                .collect(java.util.stream.Collectors.toList());
+                    }
+                    if (!closedChecked) {
+                        tickets = tickets.stream()
+                                .filter(t -> !"CLOSED".equals(t.getStatus()))
+                                .collect(java.util.stream.Collectors.toList());
+                    }
                     break;
                 default:
                     return "redirect:/access-denied";
             }
 
             model.addAttribute("tickets", tickets);
-            model.addAttribute("pageTitle", "My Tickets");
-            return "customer/my-tickets";
+            model.addAttribute("showResolved", resolvedChecked);
+            model.addAttribute("showClosed", closedChecked);
+            model.addAttribute("pageTitle", "Tickets");
+            switch (user.getRole()) {
+                case "AGENT":      return "agent/ticket-list";
+                case "SUPERVISOR":
+                case "ADMIN":      return "supervisor/ticket-list";
+                default:           return "customer/my-tickets";
+            }
 
         } catch (Exception e) {
             return "redirect:/error?message=Tickets+could+not+be+loaded";
@@ -132,6 +163,26 @@ public class TicketController {
         }
     }
 
+    // ── POST /tickets/{id}/status ─────────────────────────────────────────────
+    @PostMapping("/tickets/{id}/status")
+    public String updateStatus(@PathVariable Long id,
+                               @RequestParam String status,
+                               HttpServletRequest req) {
+        UserDTO user = SessionUtil.getUser(req);
+        if (user == null) return "redirect:/login";
+
+        String role = user.getRole();
+        if (!"AGENT".equals(role) && !"SUPERVISOR".equals(role) && !"ADMIN".equals(role)) {
+            return "redirect:/access-denied";
+        }
+
+        try {
+            ticketService.updateStatus(id, TicketStatus.valueOf(status));
+        } catch (Exception ignored) {}
+
+        return "redirect:/tickets/" + id;
+    }
+
     // ── GET /tickets/{id} ─────────────────────────────────────────────────────
     @GetMapping("/tickets/{id}")
     public String ticketDetail(@PathVariable Long id,
@@ -166,7 +217,17 @@ public class TicketController {
             model.addAttribute("ticket", ticket);
             model.addAttribute("comments", comments);
             model.addAttribute("pageTitle", "Ticket #" + ticket.getTicketNumber());
-            return "customer/ticket-detail";
+
+            switch (user.getRole()) {
+                case "AGENT":
+                    return "agent/ticket-detail";
+                case "SUPERVISOR":
+                case "ADMIN":
+                    model.addAttribute("agents", userService.findByRole("AGENT"));
+                    return "supervisor/ticket-detail";
+                default:
+                    return "customer/ticket-detail";
+            }
 
         } catch (Exception e) {
             return "redirect:/error?message=Ticket+could+not+be+loaded";

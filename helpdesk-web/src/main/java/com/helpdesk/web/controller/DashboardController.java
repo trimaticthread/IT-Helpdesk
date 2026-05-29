@@ -20,20 +20,40 @@ public class DashboardController {
         this.ticketService = ticketService;
     }
 
+    @GetMapping("/access-denied")
+    public String accessDenied() {
+        return "common/access-denied";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(HttpServletRequest req, Model model) {
         UserDTO user = SessionUtil.getUser(req);
         if (user == null) return "redirect:/login";
 
         switch (user.getRole()) {
-            case "ADMIN":
+            case "ADMIN": {
+                List<TicketDTO> all = ticketService.findAll();
+                model.addAttribute("totalTickets", all.size());
+                model.addAttribute("openTickets",  all.stream().filter(t -> "NEW".equals(t.getStatus()) || "OPEN".equals(t.getStatus()) || "IN_PROGRESS".equals(t.getStatus())).count());
+                model.addAttribute("resolvedTickets", all.stream().filter(t -> "RESOLVED".equals(t.getStatus()) || "CLOSED".equals(t.getStatus())).count());
                 return "admin/dashboard";
+            }
 
-            case "SUPERVISOR":
+            case "SUPERVISOR": {
+                List<TicketDTO> all = ticketService.findAll();
+                model.addAttribute("totalTickets", all.size());
+                model.addAttribute("openTickets",  all.stream().filter(t -> "NEW".equals(t.getStatus()) || "OPEN".equals(t.getStatus()) || "IN_PROGRESS".equals(t.getStatus())).count());
+                model.addAttribute("pendingTickets", all.stream().filter(t -> "PENDING".equals(t.getStatus())).count());
                 return "supervisor/dashboard";
+            }
 
-            case "AGENT":
+            case "AGENT": {
+                List<TicketDTO> mine = ticketService.findByAssigneeId(user.getId());
+                model.addAttribute("totalTickets", mine.size());
+                model.addAttribute("openTickets",  mine.stream().filter(t -> "OPEN".equals(t.getStatus()) || "IN_PROGRESS".equals(t.getStatus())).count());
+                model.addAttribute("resolvedTickets", mine.stream().filter(t -> "RESOLVED".equals(t.getStatus())).count());
                 return "agent/dashboard";
+            }
 
             case "CUSTOMER":
                 // Customer dashboard'a ticket istatistiklerini geçir
