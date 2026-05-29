@@ -5,7 +5,9 @@
 
 <div class="page-header">
     <h1>My Tickets</h1>
-    <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">+ New Ticket</a>
+    <c:if test="${sessionScope.currentUser.role == 'CUSTOMER'}">
+        <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">+ New Ticket</a>
+    </c:if>
 </div>
 
 <c:choose>
@@ -13,7 +15,9 @@
         <div class="empty-state">
             <h3>No tickets yet</h3>
             <p>You haven't submitted any support requests yet.</p>
-            <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">Create your first ticket</a>
+            <c:if test="${sessionScope.currentUser.role == 'CUSTOMER'}">
+                <a href="${pageContext.request.contextPath}/tickets/new" class="btn btn-primary">Create your first ticket</a>
+            </c:if>
         </div>
     </c:when>
     <c:otherwise>
