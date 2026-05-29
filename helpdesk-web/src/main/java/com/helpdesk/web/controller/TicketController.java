@@ -176,6 +176,21 @@ public class TicketController {
             return "redirect:/access-denied";
         }
 
+        Optional<TicketDTO> ticketOpt = ticketService.findById(id);
+        if (ticketOpt.isEmpty()) return "redirect:/access-denied";
+        TicketDTO ticket = ticketOpt.get();
+
+        // Agent sadece kendisine atanmış ticket'ın status'unu değiştirebilir
+        if ("AGENT".equals(role) &&
+                (ticket.getAssigneeId() == null || !ticket.getAssigneeId().equals(user.getId()))) {
+            return "redirect:/access-denied";
+        }
+
+        // Agent CLOSED yapamaz — sadece supervisor/admin kapatabilir
+        if ("AGENT".equals(role) && "CLOSED".equals(status)) {
+            return "redirect:/access-denied";
+        }
+
         try {
             ticketService.updateStatus(id, TicketStatus.valueOf(status));
         } catch (Exception ignored) {}
