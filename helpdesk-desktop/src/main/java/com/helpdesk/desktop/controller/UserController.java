@@ -63,7 +63,7 @@ public class UserController {
         userService.changePassword(userId, newPassword);
     }
 
-    /** Sifreyi Welcome@1234 olarak sifirlar, bir sonraki giriste degistirme zorunda birakilir. */
+    /** Sifreyi "password" olarak sifirlar, bir sonraki giriste degistirme zorunda birakilir. */
     public void resetPassword(Long id) {
         userService.resetPassword(id);
     }

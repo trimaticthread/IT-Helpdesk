@@ -56,7 +56,9 @@
                             </button>
                         </form>
                         <form method="post" action="${pageContext.request.contextPath}/admin/categories/${cat.id}/delete"
-                              onsubmit="return confirm('Delete this category?')">
+                              data-confirm="Delete category '${cat.name}'? This action cannot be undone."
+                              data-title="Delete Category"
+                              data-confirm-label="Delete">
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                         </form>
                     </td>

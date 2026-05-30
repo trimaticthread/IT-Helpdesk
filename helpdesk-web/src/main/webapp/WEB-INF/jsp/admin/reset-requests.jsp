@@ -33,7 +33,10 @@
                                 <td>
                                     <form method="post"
                                           action="${pageContext.request.contextPath}/admin/reset-requests/${r.id}/approve"
-                                          onsubmit="return confirm('Approve reset for ${r.username}? Their password will be set to &quot;password&quot;.')">
+                                          data-confirm="Approve password reset for ${r.username}? Their temporary password will be set to 'password'."
+                                          data-title="Approve Reset Request"
+                                          data-confirm-label="Approve"
+                                          data-confirm-color="green">
                                         <button type="submit" class="btn btn-primary btn-sm">Approve</button>
                                     </form>
                                 </td>

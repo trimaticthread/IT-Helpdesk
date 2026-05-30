@@ -193,12 +193,12 @@ public class UserManagementPanel extends JPanel {
         Long id = (Long) tableModel.getValueAt(row, 0);
         String username = (String) tableModel.getValueAt(row, 1);
         int confirm = JOptionPane.showConfirmDialog(this,
-                "'" + username + "' kullanıcısının şifresi Welcome@1234 olarak sıfırlanacak.\nDevam?",
+                "'" + username + "' kullanıcısının şifresi password olarak sıfırlanacak.\nDevam?",
                 "Şifre Sıfırla", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             userController.resetPassword(id);
             JOptionPane.showMessageDialog(this,
-                    "Şifre sıfırlandı. Geçici şifre: Welcome@1234\nKullanıcı ilk girişte şifresini değiştirmek zorundadır.",
+                    "Şifre sıfırlandı. Geçici şifre: password\nKullanıcı ilk girişte şifresini değiştirmek zorundadır.",
                     "Başarılı", JOptionPane.INFORMATION_MESSAGE);
         }
     }

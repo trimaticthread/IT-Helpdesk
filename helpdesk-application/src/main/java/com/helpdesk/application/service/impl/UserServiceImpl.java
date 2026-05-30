@@ -122,7 +122,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void resetPassword(Long userId) {
-        String hash = passwordEncoder.encode("Welcome@1234");
+        String hash = passwordEncoder.encode("password");
         userDAO.updatePassword(userId, hash);
         userDAO.setPasswordResetRequired(userId, true);
     }

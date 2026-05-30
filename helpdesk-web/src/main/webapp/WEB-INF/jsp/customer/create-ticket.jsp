@@ -23,6 +23,7 @@
                    id="title"
                    name="title"
                    maxlength="255"
+                   required
                    placeholder="Briefly describe your issue"
                    value="<c:out value='${param.title != null ? param.title : title}'/>">
         </div>
@@ -32,6 +33,7 @@
             <textarea id="description"
                       name="description"
                       rows="5"
+                      required
                       placeholder="Describe the problem in detail..."><c:out value="${param.description != null ? param.description : description}"/></textarea>
         </div>
 

@@ -59,8 +59,11 @@ public class GroupController {
     }
 
     @PostMapping("/{id}/users/add")
-    public String addUser(@PathVariable Long id, @RequestParam Long userId, HttpServletRequest req) {
+    public String addUser(@PathVariable Long id,
+                          @RequestParam(required = false) Long userId,
+                          HttpServletRequest req) {
         if (!isAdmin(req)) return "redirect:/access-denied";
+        if (userId == null) return "redirect:/admin/groups";
         groupService.addUserToGroup(id, userId);
         return "redirect:/admin/groups";
     }

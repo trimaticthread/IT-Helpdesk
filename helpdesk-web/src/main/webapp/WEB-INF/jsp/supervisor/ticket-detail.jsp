@@ -15,16 +15,16 @@
         <div class="detail-row">
             <span class="detail-label">Status</span>
             <span class="detail-value">
-                <span class="badge badge-${fn:toLowerCase(ticket.status)}">
-                    <c:out value="${ticket.status}"/>
+                <span class="badge ${ticket.statusBadgeClass}">
+                    <c:out value="${ticket.statusDisplay}"/>
                 </span>
             </span>
         </div>
         <div class="detail-row">
             <span class="detail-label">Priority</span>
             <span class="detail-value">
-                <span class="badge badge-${fn:toLowerCase(ticket.priority)}">
-                    <c:out value="${ticket.priority}"/>
+                <span class="badge ${ticket.priorityBadgeClass}">
+                    <c:out value="${ticket.priorityDisplay}"/>
                 </span>
             </span>
         </div>
@@ -46,7 +46,7 @@
         </div>
         <div class="detail-row">
             <span class="detail-label">Created</span>
-            <span class="detail-value"><c:out value="${ticket.createdAt}"/></span>
+            <span class="detail-value"><c:out value="${ticket.createdAtFormatted}"/></span>
         </div>
     </div>
 
@@ -107,7 +107,7 @@
                     <div class="comment-meta">
                         <strong><c:out value="${comment.authorName}"/></strong>
                         &nbsp;·&nbsp;
-                        <c:out value="${comment.createdAt}"/>
+                        <c:out value="${comment.createdAtFormatted}"/>
                         <c:if test="${comment.isInternal}">
                             <span style="color:#e65100; font-size:11px; margin-left:6px;">[INTERNAL]</span>
                         </c:if>

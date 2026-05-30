@@ -108,5 +108,40 @@
     </div>
 
 </nav>
+<%-- ── CUSTOM CONFIRM MODAL ────────────────────────────────────────────── --%>
+<div id="confirmModal" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;align-items:center;justify-content:center;">
+    <div style="background:#fff;border-radius:10px;padding:32px 36px;width:400px;max-width:92vw;box-shadow:0 8px 32px rgba(0,0,0,.22);text-align:center;font-family:'Segoe UI',sans-serif;">
+        <h3 id="modalTitle" style="margin:0 0 10px;font-size:17px;color:#1a2332;"></h3>
+        <p id="modalMessage" style="margin:0 0 24px;font-size:14px;color:#555;line-height:1.5;"></p>
+        <div style="display:flex;gap:10px;justify-content:center;">
+            <button onclick="closeModal()" style="padding:8px 24px;border:1px solid #ccc;border-radius:5px;background:#fff;color:#444;cursor:pointer;font-size:14px;">Cancel</button>
+            <button id="modalConfirmBtn" onclick="submitPendingForm()" style="padding:8px 24px;border:none;border-radius:5px;background:#e53935;color:#fff;cursor:pointer;font-size:14px;font-weight:600;">Confirm</button>
+        </div>
+    </div>
+</div>
+<script>
+    var _pendingForm = null;
+    document.addEventListener('DOMContentLoaded', function () {
+        document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+            form.addEventListener('submit', function (e) {
+                e.preventDefault();
+                var msg   = form.dataset.confirm   || 'Are you sure?';
+                var title = form.dataset.title     || 'Confirm Action';
+                var color = form.dataset.confirmColor || 'red';
+                document.getElementById('modalTitle').textContent   = title;
+                document.getElementById('modalMessage').textContent = msg;
+                var btn = document.getElementById('modalConfirmBtn');
+                btn.style.background = (color === 'green') ? '#2e7d32' : '#e53935';
+                btn.textContent = form.dataset.confirmLabel || 'Confirm';
+                _pendingForm = form;
+                openModal();
+            });
+        });
+    });
+    function openModal()  { var m = document.getElementById('confirmModal'); m.style.display = 'flex'; }
+    function closeModal() { var m = document.getElementById('confirmModal'); m.style.display = 'none'; _pendingForm = null; }
+    function submitPendingForm() { if (_pendingForm) { _pendingForm.submit(); } closeModal(); }
+    document.getElementById('confirmModal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+</script>
 <%-- ── SAYFA İÇERİĞİ BURADAN BAŞLAR ──────────────────────────────────── --%>
 <div class="container">

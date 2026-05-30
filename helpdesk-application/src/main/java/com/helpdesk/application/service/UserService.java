@@ -34,7 +34,7 @@ public interface UserService {
     void changePassword(Long userId, String newRawPassword);
 
     /**
-     * Kullanicinin sifresini Welcome@1234 olarak sifirlar ve
+     * Kullanicinin sifresini "password" olarak sifirlar ve
      * bir sonraki giriste degistirme zorunlulugunu aktiflestirir.
      */
     void resetPassword(Long userId);

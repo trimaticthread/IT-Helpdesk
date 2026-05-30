@@ -31,6 +31,7 @@ public class User {
     private LocalDateTime updatedAt;
     private Set<Role> roles = new HashSet<>();
     private Set<Group> groups = new HashSet<>();
+    private String roleName;
 
     public User() {}
 
@@ -74,4 +75,7 @@ public class User {
     public void setRoles(Set<Role> roles) { this.roles = roles; }
     public Set<Group> getGroups() { return groups; }
     public void setGroups(Set<Group> groups) { this.groups = groups; }
+
+    public String getRoleName() { return roleName; }
+    public void setRoleName(String roleName) { this.roleName = roleName; }
 }

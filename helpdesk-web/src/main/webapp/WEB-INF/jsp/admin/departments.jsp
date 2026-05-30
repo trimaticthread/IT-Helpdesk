@@ -40,7 +40,9 @@
                             </button>
                         </form>
                         <form method="post" action="${pageContext.request.contextPath}/admin/departments/${dep.id}/delete"
-                              onsubmit="return confirm('Delete this department?')">
+                              data-confirm="Delete department '${dep.name}'? This action cannot be undone."
+                              data-title="Delete Department"
+                              data-confirm-label="Delete">
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                         </form>
                     </td>

@@ -51,18 +51,17 @@
                             </td>
                             <td>
                                 <%-- Priority badge --%>
-                                <span class="badge badge-${fn:toLowerCase(ticket.priority)}">
-                                    <c:out value="${ticket.priority}"/>
+                                <span class="badge ${ticket.priorityBadgeClass}">
+                                    <c:out value="${ticket.priorityDisplay}"/>
                                 </span>
                             </td>
                             <td>
-                                <%-- Status badge --%>
-                                <span class="badge badge-${fn:toLowerCase(ticket.status)}">
-                                    <c:out value="${ticket.status}"/>
+                                <span class="badge ${ticket.statusBadgeClass}">
+                                    <c:out value="${ticket.statusDisplay}"/>
                                 </span>
                             </td>
                             <td style="color:#7a8ea0; font-size:12px;">
-                                <c:out value="${ticket.createdAt}"/>
+                                <c:out value="${ticket.createdAtFormatted}"/>
                             </td>
                             <td>
                                 <a href="${pageContext.request.contextPath}/tickets/${ticket.id}"

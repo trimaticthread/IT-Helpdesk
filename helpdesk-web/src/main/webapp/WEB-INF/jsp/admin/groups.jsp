@@ -26,7 +26,9 @@
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
             <strong><c:out value="${group.name}"/></strong>
             <form method="post" action="${pageContext.request.contextPath}/admin/groups/${group.id}/delete"
-                  onsubmit="return confirm('Delete group ${group.name}?')">
+                  data-confirm="Delete group '${group.name}'? All members will be removed."
+                  data-title="Delete Group"
+                  data-confirm-label="Delete">
                 <button type="submit" class="btn btn-danger btn-sm">Delete Group</button>
             </form>
         </div>
@@ -34,7 +36,7 @@
         <%-- Gruba agent ekle --%>
         <form method="post" action="${pageContext.request.contextPath}/admin/groups/${group.id}/users/add"
               style="display:flex;gap:8px;margin-bottom:12px;">
-            <select name="userId" style="flex:1;padding:7px 10px;border:1px solid #c8d0da;border-radius:5px;font-size:13px;">
+            <select name="userId" required style="flex:1;padding:7px 10px;border:1px solid #c8d0da;border-radius:5px;font-size:13px;">
                 <option value="">-- Add Agent --</option>
                 <c:forEach var="agent" items="${agents}">
                     <option value="${agent.id}"><c:out value="${agent.firstName}"/> <c:out value="${agent.lastName}"/></option>
