@@ -1,6 +1,7 @@
 package com.helpdesk.application.dto;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class TicketDTO {
 
@@ -70,4 +71,57 @@ public class TicketDTO {
 
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
+
+    public String getCreatedAtFormatted() {
+        if (createdAt == null) return "";
+        return createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
+    public String getStatusDisplay() {
+        if (status == null) return "";
+        switch (status) {
+            case "NEW":         return "New";
+            case "OPEN":        return "Open";
+            case "IN_PROGRESS": return "In Progress";
+            case "PENDING":     return "Pending";
+            case "RESOLVED":    return "Resolved";
+            case "CLOSED":      return "Closed";
+            default:            return status;
+        }
+    }
+
+    public String getStatusBadgeClass() {
+        if (status == null) return "badge-new";
+        switch (status) {
+            case "NEW":         return "badge-new";
+            case "OPEN":        return "badge-open";
+            case "IN_PROGRESS": return "badge-in-progress";
+            case "PENDING":     return "badge-pending";
+            case "RESOLVED":    return "badge-resolved";
+            case "CLOSED":      return "badge-closed";
+            default:            return "badge-new";
+        }
+    }
+
+    public String getPriorityDisplay() {
+        if (priority == null) return "";
+        switch (priority) {
+            case "LOW":      return "Low";
+            case "MEDIUM":   return "Medium";
+            case "HIGH":     return "High";
+            case "CRITICAL": return "Critical";
+            default:         return priority;
+        }
+    }
+
+    public String getPriorityBadgeClass() {
+        if (priority == null) return "";
+        switch (priority) {
+            case "LOW":      return "badge-low";
+            case "MEDIUM":   return "badge-medium";
+            case "HIGH":     return "badge-high";
+            case "CRITICAL": return "badge-critical";
+            default:         return "";
+        }
+    }
 }

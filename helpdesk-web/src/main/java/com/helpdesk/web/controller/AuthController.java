@@ -132,8 +132,10 @@ public class AuthController {
 
             // ── Şifre sıfırlama zorunlu mu? ──────────────────────────────────
             if (userService.isPasswordResetRequired(user.getId())) {
+                req.getSession().setAttribute("passwordResetRequired", true);
                 return "redirect:/change-password";
             } else {
+                req.getSession().removeAttribute("passwordResetRequired");
                 return "redirect:/dashboard";
             }
 

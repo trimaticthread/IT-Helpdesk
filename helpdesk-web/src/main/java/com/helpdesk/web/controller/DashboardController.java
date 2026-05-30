@@ -25,6 +25,11 @@ public class DashboardController {
         return "common/access-denied";
     }
 
+    @GetMapping("/error")
+    public String errorPage() {
+        return "common/error";
+    }
+
     @GetMapping("/dashboard")
     public String dashboard(HttpServletRequest req, Model model) {
         UserDTO user = SessionUtil.getUser(req);

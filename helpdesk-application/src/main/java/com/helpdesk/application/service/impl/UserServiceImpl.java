@@ -48,6 +48,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Optional<UserDTO> findByEmail(String email) {
+        return userDAO.findByEmail(email).map(UserMapper::toDTO);
+    }
+
+    @Override
     public List<UserDTO> findAll() {
         return userDAO.findAll().stream()
                 .map(UserMapper::toDTO)
@@ -117,7 +122,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public void resetPassword(Long userId) {
-        String hash = passwordEncoder.encode("Welcome@1234");
+        String hash = passwordEncoder.encode("password");
+        userDAO.updatePassword(userId, hash);
+        userDAO.setPasswordResetRequired(userId, true);
+    }
+
+    @Override
+    public void resetPasswordTo(Long userId, String rawPassword) {
+        String hash = passwordEncoder.encode(rawPassword);
         userDAO.updatePassword(userId, hash);
         userDAO.setPasswordResetRequired(userId, true);
     }

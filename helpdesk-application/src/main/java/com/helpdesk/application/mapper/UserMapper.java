@@ -15,6 +15,7 @@ public class UserMapper {
         dto.setLastName(user.getLastName());
         dto.setDepartment(user.getDepartment());
         dto.setIsActive(user.getIsActive());
+        dto.setRole(user.getRoleName());
         return dto;
     }
 

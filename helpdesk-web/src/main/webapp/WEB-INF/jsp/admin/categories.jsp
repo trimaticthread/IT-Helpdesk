@@ -6,6 +6,18 @@
     <h1>Categories</h1>
 </div>
 
+<c:if test="${not empty error}">
+    <div class="alert alert-danger" style="margin-bottom:12px;padding:10px 14px;background:#fdecea;border:1px solid #f5c6cb;border-radius:5px;color:#c62828;">
+        <c:out value="${error}"/>
+    </div>
+</c:if>
+
+<c:if test="${not empty param.error}">
+    <div class="alert alert-danger" style="margin-bottom:12px;padding:10px 14px;background:#fdecea;border:1px solid #f5c6cb;border-radius:5px;color:#c62828;">
+        <c:out value="${param.error}"/>
+    </div>
+</c:if>
+
 <div class="card" style="max-width:480px;">
     <div class="card-title" style="font-weight:700;margin-bottom:12px;">Add Category</div>
     <form method="post" action="${pageContext.request.contextPath}/admin/categories/new" style="display:flex;gap:8px;">
@@ -44,7 +56,9 @@
                             </button>
                         </form>
                         <form method="post" action="${pageContext.request.contextPath}/admin/categories/${cat.id}/delete"
-                              onsubmit="return confirm('Delete this category?')">
+                              data-confirm="Delete category '${cat.name}'? This action cannot be undone."
+                              data-title="Delete Category"
+                              data-confirm-label="Delete">
                             <button type="submit" class="btn btn-danger btn-sm">Delete</button>
                         </form>
                     </td>

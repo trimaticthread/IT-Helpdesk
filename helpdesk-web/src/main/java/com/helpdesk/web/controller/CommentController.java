@@ -52,9 +52,12 @@ public class CommentController {
             return "redirect:/access-denied";
         }
 
-        // RESOLVED/CLOSED ticket'a yorum yazılamaz
-        if ("RESOLVED".equals(ticket.getStatus()) || "CLOSED".equals(ticket.getStatus())) {
-            return "redirect:/tickets/" + ticketId + "?error=Comment+cannot+be+added+to+closed+ticket";
+        // CLOSED ticket'a hiç kimse yorum yazamaz; RESOLVED'a sadece customer yazamaz
+        if ("CLOSED".equals(ticket.getStatus())) {
+            return "redirect:/tickets/" + ticketId + "?error=Comment+cannot+be+added+to+a+closed+ticket";
+        }
+        if ("RESOLVED".equals(ticket.getStatus()) && "CUSTOMER".equals(role)) {
+            return "redirect:/tickets/" + ticketId + "?error=Ticket+is+resolved.+Contact+support+if+the+issue+persists";
         }
 
         // isInternal sadece AGENT/SUPERVISOR/ADMIN için geçerli, customer her zaman public

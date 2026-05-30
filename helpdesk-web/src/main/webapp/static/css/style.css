@@ -140,12 +140,13 @@ tbody tr:hover { background: #fafbfd; }
     text-transform: uppercase;
     letter-spacing: 0.4px;
 }
-.badge-new       { background: #e8f4fd; color: #1565c0; }
-.badge-open      { background: #e3f9e5; color: #1b5e20; }
-.badge-in_progress { background: #fff8e1; color: #f57f17; }
-.badge-pending   { background: #fce4ec; color: #880e4f; }
-.badge-resolved  { background: #e8f5e9; color: #2e7d32; }
-.badge-closed    { background: #eeeeee; color: #616161; }
+.badge-new         { background: #e3f2fd; color: #1565c0; }
+.badge-open        { background: #e8f5e9; color: #2e7d32; }
+.badge-in-progress,
+.badge-in_progress { background: #fff8e1; color: #e65100; }
+.badge-pending     { background: #fce4ec; color: #880e4f; }
+.badge-resolved    { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
+.badge-closed      { background: #f5f5f5; color: #757575; }
 
 .badge-low      { background: #e3f9e5; color: #1b5e20; }
 .badge-medium   { background: #fff8e1; color: #f57f17; }
@@ -262,6 +263,42 @@ tbody tr:hover { background: #fafbfd; }
 }
 .stat-card .stat-number { font-size: 32px; font-weight: 700; color: #2962ff; }
 .stat-card .stat-label  { font-size: 12px; color: #7a8ea0; margin-top: 4px; }
+
+/* ── CONFIRM MODAL ───────────────────────────────────────────────────────── */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    z-index: 1000;
+    align-items: center;
+    justify-content: center;
+}
+.modal-overlay.active { display: flex; }
+.modal-box {
+    background: #fff;
+    border-radius: 10px;
+    padding: 28px 32px;
+    width: 380px;
+    max-width: 90vw;
+    box-shadow: 0 8px 32px rgba(0,0,0,.18);
+    text-align: center;
+}
+.modal-box h3 { font-size: 16px; color: #1a2332; margin-bottom: 10px; }
+.modal-box p  { font-size: 14px; color: #555; margin-bottom: 24px; line-height: 1.5; }
+.modal-actions { display: flex; gap: 10px; justify-content: center; }
+.modal-actions .btn-cancel {
+    padding: 8px 22px; border: 1px solid #ccc; border-radius: 5px;
+    background: #fff; color: #444; cursor: pointer; font-size: 14px;
+}
+.modal-actions .btn-cancel:hover { background: #f5f5f5; }
+.modal-actions .btn-confirm {
+    padding: 8px 22px; border: none; border-radius: 5px;
+    background: #e53935; color: #fff; cursor: pointer; font-size: 14px;
+}
+.modal-actions .btn-confirm:hover { background: #c62828; }
+.modal-actions .btn-confirm.green { background: #2e7d32; }
+.modal-actions .btn-confirm.green:hover { background: #1b5e20; }
 
 /* ── EMPTY STATE ─────────────────────────────────────────────────────────── */
 .empty-state {

@@ -40,11 +40,11 @@
                             <tr>
                                 <td><a href="${pageContext.request.contextPath}/tickets/${t.id}"><c:out value="${t.ticketNumber}"/></a></td>
                                 <td><a href="${pageContext.request.contextPath}/tickets/${t.id}"><c:out value="${t.title}"/></a></td>
-                                <td><span class="badge badge-${fn:toLowerCase(t.status)}"><c:out value="${t.status}"/></span></td>
-                                <td><span class="badge badge-${fn:toLowerCase(t.priority)}"><c:out value="${t.priority}"/></span></td>
+                                <td><span class="badge ${t.statusBadgeClass}"><c:out value="${t.statusDisplay}"/></span></td>
+                                <td><span class="badge ${t.priorityBadgeClass}"><c:out value="${t.priorityDisplay}"/></span></td>
                                 <td><c:out value="${t.requesterName}"/></td>
                                 <td><c:out value="${t.categoryName}"/></td>
-                                <td><c:out value="${t.createdAt}"/></td>
+                                <td><c:out value="${t.createdAtFormatted}"/></td>
                             </tr>
                         </c:forEach>
                     </tbody>

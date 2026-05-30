@@ -38,24 +38,36 @@ public class UserDAOImpl implements UserDAO {
     }
 
     private static class UserRowMapper implements RowMapper<User> {
-
         @Override
         public User mapRow(ResultSet rs, int rowNum) throws SQLException {
-            User user = new User();
-            user.setId(rs.getLong("id"));
-            user.setUsername(rs.getString("username"));
-            user.setEmail(rs.getString("email"));
-            user.setPasswordHash(rs.getString("password_hash"));
-            user.setFirstName(rs.getString("first_name"));
-            user.setLastName(rs.getString("last_name"));
-            user.setPhone(rs.getString("phone"));
-            user.setDepartment(rs.getString("department"));
-            user.setIsActive(rs.getBoolean("is_active"));
-            user.setPasswordResetRequired(rs.getBoolean("password_reset_required"));
-            user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
-            user.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+            return mapUser(rs);
+        }
+    }
+
+    private static class UserWithRoleRowMapper implements RowMapper<User> {
+        @Override
+        public User mapRow(ResultSet rs, int rowNum) throws SQLException {
+            User user = mapUser(rs);
+            user.setRoleName(rs.getString("role_name"));
             return user;
         }
+    }
+
+    private static User mapUser(ResultSet rs) throws SQLException {
+        User user = new User();
+        user.setId(rs.getLong("id"));
+        user.setUsername(rs.getString("username"));
+        user.setEmail(rs.getString("email"));
+        user.setPasswordHash(rs.getString("password_hash"));
+        user.setFirstName(rs.getString("first_name"));
+        user.setLastName(rs.getString("last_name"));
+        user.setPhone(rs.getString("phone"));
+        user.setDepartment(rs.getString("department"));
+        user.setIsActive(rs.getBoolean("is_active"));
+        user.setPasswordResetRequired(rs.getBoolean("password_reset_required"));
+        user.setCreatedAt(rs.getTimestamp("created_at").toLocalDateTime());
+        user.setUpdatedAt(rs.getTimestamp("updated_at").toLocalDateTime());
+        return user;
     }
 
     @Override
@@ -81,8 +93,10 @@ public class UserDAOImpl implements UserDAO {
 
     @Override
     public List<User> findAll() {
-        String sql = "SELECT * FROM users";
-        return jdbcTemplate.query(sql, new UserRowMapper());
+        String sql = "SELECT u.*, r.name AS role_name FROM users u " +
+                     "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                     "LEFT JOIN roles r ON r.id = ur.role_id";
+        return jdbcTemplate.query(sql, new UserWithRoleRowMapper());
     }
 
     @Override
