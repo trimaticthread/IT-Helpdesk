@@ -14,7 +14,14 @@
     <div class="auth-card">
 
         <h1>Change Password</h1>
-        <p class="subtitle">Your password must be changed before you can continue.</p>
+        <c:choose>
+            <c:when test="${sessionScope.passwordResetRequired == true}">
+                <p class="subtitle" style="color:#c62828;">Your password has been reset by an administrator. Please set a new password to continue.</p>
+            </c:when>
+            <c:otherwise>
+                <p class="subtitle">Update your account password below.</p>
+            </c:otherwise>
+        </c:choose>
 
         <%-- Hata mesajı --%>
         <c:if test="${not empty error}">

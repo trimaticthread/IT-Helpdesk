@@ -52,7 +52,7 @@ public class ChangePasswordController {
 
         try {
             userService.changePassword(user.getId(), newPassword);
-            // Şifre değiştirildi — dashboard'a yönlendir
+            req.getSession().removeAttribute("passwordResetRequired");
             return "redirect:/dashboard?passwordChanged=true";
         } catch (Exception e) {
             model.addAttribute("error", "An error occurred. Please try again.");

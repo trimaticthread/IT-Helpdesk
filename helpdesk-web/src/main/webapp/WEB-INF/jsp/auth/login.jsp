@@ -130,6 +130,10 @@
         <button type="submit">Sign In</button>
 
     </form>
+
+    <p style="margin-top:1.2rem;text-align:center;font-size:.82rem;color:#888;">
+        Forgot your password? Contact your system administrator.
+    </p>
 </div>
 
 </body>

@@ -38,7 +38,8 @@ public class AuthFilter implements Filter { // implements Filter ŞART — Sprin
     private static final List<String> PUBLIC_URLS = List.of(
             "/login",   // giriş sayfası ve formu
             "/logout",  // çıkış işlemi
-            "/static"   // CSS, JS, resim gibi statik dosyalar
+            "/static",  // CSS, JS, resim gibi statik dosyalar
+            "/error"    // hata sayfası — anonim kullanıcılar da görebilmeli
     );
 
     /**
@@ -66,13 +67,20 @@ public class AuthFilter implements Filter { // implements Filter ŞART — Sprin
         // İstenen URL, herkese açık listede var mı?
         boolean isPublic = PUBLIC_URLS.stream().anyMatch(uri::startsWith);
 
-        if (isPublic || SessionUtil.isLoggedIn(request)) {
-            // Herkese açık URL veya giriş yapılmış → zinciri devam ettir
+        if (isPublic) {
             chain.doFilter(request, response);
-        } else {
-            // Giriş yapılmamış ve korumalı sayfa → login'e yönlendir
-            // sendRedirect sadece HttpServletResponse'da var — bu yüzden cast şarttı
+        } else if (!SessionUtil.isLoggedIn(request)) {
             response.sendRedirect(request.getContextPath() + "/login");
+        } else {
+            // Şifre değiştirme zorunluysa sadece /change-password ve /logout'a izin ver
+            Object resetFlag = request.getSession().getAttribute("passwordResetRequired");
+            boolean mustReset = Boolean.TRUE.equals(resetFlag);
+            boolean isChangePassword = uri.startsWith("/change-password");
+            if (mustReset && !isChangePassword) {
+                response.sendRedirect(request.getContextPath() + "/change-password");
+            } else {
+                chain.doFilter(request, response);
+            }
         }
     }
 }

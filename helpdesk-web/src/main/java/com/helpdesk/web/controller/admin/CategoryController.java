@@ -34,9 +34,16 @@ public class CategoryController {
     @PostMapping("/new")
     public String create(@RequestParam String name,
                          @RequestParam(required = false) String description,
-                         HttpServletRequest req) {
+                         HttpServletRequest req, Model model) {
         if (!isAdmin(req)) return "redirect:/access-denied";
-        categoryService.createCategory(name.trim(), description);
+        try {
+            categoryService.createCategory(name.trim(), description);
+        } catch (com.helpdesk.domain.exception.BusinessException e) {
+            model.addAttribute("error", e.getMessage());
+            model.addAttribute("categories", categoryService.getAllCategories());
+            model.addAttribute("pageTitle", "Categories");
+            return "admin/categories";
+        }
         return "redirect:/admin/categories";
     }
 

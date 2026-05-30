@@ -4,6 +4,7 @@ import com.helpdesk.application.dto.UserDTO;
 import com.helpdesk.application.service.GroupService;
 import com.helpdesk.application.service.UserService;
 import com.helpdesk.domain.entity.Group;
+import com.helpdesk.domain.entity.User;
 import com.helpdesk.web.util.SessionUtil;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Controller;
@@ -35,7 +36,7 @@ public class GroupController {
     public String list(HttpServletRequest req, Model model) {
         if (!isAdmin(req)) return "redirect:/access-denied";
         List<Group> groups = groupService.getAllGroups();
-        Map<Long, List> groupMembers = new LinkedHashMap<>();
+        Map<Long, List<User>> groupMembers = new LinkedHashMap<>();
         for (Group g : groups) {
             groupMembers.put(g.getId(), groupService.getUsersInGroup(g.getId()));
         }
