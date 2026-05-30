@@ -79,6 +79,16 @@
                 <a href="${pageContext.request.contextPath}/admin/departments">Departments</a>
                 <a href="${pageContext.request.contextPath}/admin/groups">Groups</a>
                 <a href="${pageContext.request.contextPath}/admin/sla">SLA</a>
+                <a href="${pageContext.request.contextPath}/admin/reset-requests"
+                   style="position:relative;">
+                    Reset Requests
+                    <c:if test="${pendingResetCount > 0}">
+                        <span style="background:#e53935;color:#fff;border-radius:10px;
+                                     padding:1px 6px;font-size:.72rem;margin-left:4px;">
+                            <c:out value="${pendingResetCount}"/>
+                        </span>
+                    </c:if>
+                </a>
             </c:when>
 
         </c:choose>

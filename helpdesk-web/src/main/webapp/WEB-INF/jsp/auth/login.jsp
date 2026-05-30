@@ -131,8 +131,8 @@
 
     </form>
 
-    <p style="margin-top:1.2rem;text-align:center;font-size:.82rem;color:#888;">
-        Forgot your password? Contact your system administrator.
+    <p style="margin-top:1.2rem;text-align:center;font-size:.85rem;">
+        <a href="forgot-password" style="color:#1a237e;text-decoration:none;">Forgot your password?</a>
     </p>
 </div>
 

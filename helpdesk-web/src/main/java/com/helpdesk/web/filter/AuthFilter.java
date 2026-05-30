@@ -36,10 +36,11 @@ public class AuthFilter implements Filter { // implements Filter ŞART — Sprin
      * Bu listedeki URL'lere session kontrolü uygulanmaz.
      */
     private static final List<String> PUBLIC_URLS = List.of(
-            "/login",   // giriş sayfası ve formu
-            "/logout",  // çıkış işlemi
-            "/static",  // CSS, JS, resim gibi statik dosyalar
-            "/error"    // hata sayfası — anonim kullanıcılar da görebilmeli
+            "/login",
+            "/logout",
+            "/static",
+            "/error",
+            "/forgot-password"
     );
 
     /**

@@ -10,6 +10,8 @@ public interface UserService {
 
     Optional<UserDTO> findByUsername(String username);
 
+    Optional<UserDTO> findByEmail(String email);
+
     List<UserDTO> findAll();
 
     UserDTO save(UserDTO dto, String rawPassword);
@@ -36,4 +38,7 @@ public interface UserService {
      * bir sonraki giriste degistirme zorunlulugunu aktiflestirir.
      */
     void resetPassword(Long userId);
+
+    /** Şifreyi belirtilen değere sıfırlar ve password_reset_required=true yapar. */
+    void resetPasswordTo(Long userId, String rawPassword);
 }

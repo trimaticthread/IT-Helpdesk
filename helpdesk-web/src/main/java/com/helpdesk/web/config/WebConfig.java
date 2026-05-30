@@ -1,10 +1,14 @@
 package com.helpdesk.web.config;
 
+import com.helpdesk.application.service.PasswordResetRequestService;
 import com.helpdesk.web.filter.AuthFilter;
 import com.helpdesk.web.filter.EncodingFilter;
+import com.helpdesk.web.interceptor.AdminInterceptor;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.servlet.config.annotation.InterceptorRegistry;
+import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 /**
  * ── WebConfig ────────────────────────────────────────────────────────────────
@@ -28,8 +32,19 @@ import org.springframework.context.annotation.Configuration;
  *   FilterRegistrationBean → Tomcat'e "her istekte bu Filter'ı çalıştır" der.
  * ─────────────────────────────────────────────────────────────────────────────
  */
-@Configuration // Bu sınıf Spring konfigürasyon kaynağıdır — @Bean metodları burada
-public class WebConfig {
+@Configuration
+public class WebConfig implements WebMvcConfigurer {
+
+    private final PasswordResetRequestService resetService;
+
+    public WebConfig(PasswordResetRequestService resetService) {
+        this.resetService = resetService;
+    }
+
+    @Override
+    public void addInterceptors(InterceptorRegistry registry) {
+        registry.addInterceptor(new AdminInterceptor(resetService));
+    }
 
     // ── FİLTER KAYITLARI ─────────────────────────────────────────────────────
 
