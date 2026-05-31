@@ -48,6 +48,23 @@
             <span class="detail-label">Created</span>
             <span class="detail-value"><c:out value="${ticket.createdAtFormatted}"/></span>
         </div>
+        <div class="detail-row">
+            <span class="detail-label">Group</span>
+            <span class="detail-value">
+                <c:out value="${not empty ticket.groupName ? ticket.groupName : 'No Group'}"/>
+            </span>
+        </div>
+        <div class="detail-row">
+            <span class="detail-label">SLA Due</span>
+            <span class="detail-value">
+                <span style="${ticket.slaBadgeStyle}padding:3px 8px;border-radius:4px;font-size:12px;font-weight:600;">
+                    <c:out value="${ticket.slaLabel}"/>
+                    <c:if test="${ticket.slaStatus != 'met' && ticket.slaStatus != 'unknown'}">
+                        &nbsp;— <c:out value="${ticket.slaDueDateFormatted}"/>
+                    </c:if>
+                </span>
+            </span>
+        </div>
     </div>
 
     <div style="margin-bottom:20px;">
@@ -72,21 +89,49 @@
         </form>
     </c:if>
 
-    <%-- Agent atama --%>
+    <%-- Group atama --%>
     <c:if test="${ticket.status != 'CLOSED'}">
-        <form method="post" action="${pageContext.request.contextPath}/supervisor/assign"
-              style="display:flex;gap:8px;align-items:center;">
-            <select name="agentId" style="padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;">
-                <option value="">-- Assign to Agent --</option>
-                <c:forEach var="agent" items="${agents}">
-                    <option value="${agent.id}" ${ticket.assigneeId == agent.id ? 'selected' : ''}>
-                        <c:out value="${agent.firstName}"/> <c:out value="${agent.lastName}"/>
-                    </option>
-                </c:forEach>
-            </select>
-            <input type="hidden" name="ticketId" value="${ticket.id}">
-            <button type="submit" class="btn btn-secondary btn-sm">Assign</button>
-        </form>
+        <div style="margin-bottom:8px;">
+            <span style="font-size:12px;font-weight:600;color:#7a8ea0;display:block;margin-bottom:4px;">ASSIGN GROUP</span>
+            <form method="post" action="${pageContext.request.contextPath}/supervisor/assign-group"
+                  style="display:flex;gap:8px;align-items:center;">
+                <select name="groupId" style="padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;">
+                    <option value="">-- No Group --</option>
+                    <c:forEach var="grp" items="${groups}">
+                        <option value="${grp.id}" ${ticket.groupId == grp.id ? 'selected' : ''}>
+                            <c:out value="${grp.name}"/>
+                        </option>
+                    </c:forEach>
+                </select>
+                <input type="hidden" name="ticketId" value="${ticket.id}">
+                <button type="submit" class="btn btn-secondary btn-sm">Set Group</button>
+            </form>
+        </div>
+    </c:if>
+
+    <%-- Agent atama (grup seçiliyse sadece o grubun üyeleri görünür) --%>
+    <c:if test="${ticket.status != 'CLOSED'}">
+        <div>
+            <span style="font-size:12px;font-weight:600;color:#7a8ea0;display:block;margin-bottom:4px;">
+                ASSIGN AGENT
+                <c:if test="${not empty ticket.groupName}">
+                    <span style="font-weight:400;color:#aab4be;">(filtered: <c:out value="${ticket.groupName}"/>)</span>
+                </c:if>
+            </span>
+            <form method="post" action="${pageContext.request.contextPath}/supervisor/assign"
+                  style="display:flex;gap:8px;align-items:center;">
+                <select name="agentId" style="padding:.4rem .6rem;border:1px solid #ccc;border-radius:4px;">
+                    <option value="">-- Select Agent --</option>
+                    <c:forEach var="agent" items="${agents}">
+                        <option value="${agent.id}" ${ticket.assigneeId == agent.id ? 'selected' : ''}>
+                            <c:out value="${agent.firstName}"/> <c:out value="${agent.lastName}"/>
+                        </option>
+                    </c:forEach>
+                </select>
+                <input type="hidden" name="ticketId" value="${ticket.id}">
+                <button type="submit" class="btn btn-primary btn-sm">Assign Agent</button>
+            </form>
+        </div>
     </c:if>
 </div>
 

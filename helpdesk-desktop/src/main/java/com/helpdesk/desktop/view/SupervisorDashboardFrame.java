@@ -190,7 +190,7 @@ public class SupervisorDashboardFrame extends JFrame {
 
         // ─── TİCKET TABLOSU ──────────────────────────────────────────────────
         // ID kolonu gizli; Requester kolonu supervisor'a talep sahibini gösterir
-        String[] columns = {"ID", "Ticket No", "Title", "Status", "Priority", "Requester", "Category", "Date"};
+        String[] columns = {"ID", "Ticket No", "Title", "Status", "Priority", "SLA", "Requester", "Category", "Date"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int row, int col) { return false; }
         };
@@ -211,7 +211,7 @@ public class SupervisorDashboardFrame extends JFrame {
         ticketTable.getColumnModel().getColumn(0).setWidth(0);
 
         // Sütun genişlikleri: Ticket No, Başlık, Durum, Öncelik, Talep Eden, Kategori, Tarih
-        int[] widths = {0, 110, 220, 100, 80, 130, 120, 100};
+        int[] widths = {0, 110, 200, 100, 75, 100, 120, 110, 95};
         for (int i = 1; i < widths.length; i++) {
             ticketTable.getColumnModel().getColumn(i).setPreferredWidth(widths[i]);
         }
@@ -228,6 +228,7 @@ public class SupervisorDashboardFrame extends JFrame {
                     ? currentTickets.get(selectedRow).getStatus() : "";
             changeStatusButton.setEnabled(!"CLOSED".equals(status));
             assignButton.setEnabled(!"CLOSED".equals(status));
+
         });
 
         // Çift tıklamada ViewTicketDialog açılır — supervisor agent gibi dahili yorumları görebilir
@@ -249,7 +250,7 @@ public class SupervisorDashboardFrame extends JFrame {
             }
         });
 
-        // Zebra + RESOLVED/CLOSED satırları gri (Supervisor: status index=3)
+        // Zebra + durum/SLA renklemesi
         DefaultTableCellRenderer cellRenderer = new DefaultTableCellRenderer() {
             @Override
             public Component getTableCellRendererComponent(JTable table, Object value,
@@ -264,6 +265,14 @@ public class SupervisorDashboardFrame extends JFrame {
                     } else {
                         setBackground(row % 2 == 0 ? Color.WHITE : new Color(248, 250, 253));
                         setForeground(Color.BLACK);
+                    }
+                    // SLA kolonu (index 5) — renkli metin
+                    if (col == 5 && !isSelected) {
+                        String sla = value != null ? value.toString() : "";
+                        if ("SLA Breached".equals(sla))  { setForeground(new Color(198, 40, 40)); setBackground(new Color(255, 235, 238)); }
+                        else if ("Due Soon".equals(sla)) { setForeground(new Color(230, 81, 0));  setBackground(new Color(255, 253, 231)); }
+                        else if ("SLA Met".equals(sla))  { setForeground(new Color(46, 125, 50)); }
+                        else if ("On Track".equals(sla)) { setForeground(new Color(21, 101, 192)); }
                     }
                 }
                 return this;
@@ -434,18 +443,41 @@ public class SupervisorDashboardFrame extends JFrame {
         if (row == -1) return;
         Long ticketId = (Long) tableModel.getValueAt(row, 0);
 
-        // Sistemdeki tüm AGENT rolündeki kullanıcıları listele
-        List<com.helpdesk.application.dto.UserDTO> agents = ticketController.getAgents();
+        // ─── ADIM 1: Grup seç ────────────────────────────────────────────────
+        java.util.List<com.helpdesk.domain.entity.Group> groups = groupController.getAllGroups();
+        Object[] groupOptions = new Object[groups.size() + 1];
+        groupOptions[0] = "-- All Agents (No Group Filter) --";
+        for (int i = 0; i < groups.size(); i++) groupOptions[i + 1] = groups.get(i);
+
+        Object groupChoice = JOptionPane.showInputDialog(
+                this, "Select group to filter agents:", "Step 1 — Select Group",
+                JOptionPane.PLAIN_MESSAGE, null, groupOptions, groupOptions[0]);
+        if (groupChoice == null) return;
+
+        // ─── ADIM 2: Gruba göre agent listesi ───────────────────────────────
+        java.util.List<com.helpdesk.application.dto.UserDTO> agents;
+        if (groupChoice instanceof com.helpdesk.domain.entity.Group) {
+            com.helpdesk.domain.entity.Group selectedGroup = (com.helpdesk.domain.entity.Group) groupChoice;
+            java.util.List<com.helpdesk.domain.entity.User> groupUsers = groupController.getUsersInGroup(selectedGroup.getId());
+            java.util.Set<Long> groupUserIds = groupUsers.stream().map(com.helpdesk.domain.entity.User::getId).collect(java.util.stream.Collectors.toSet());
+            agents = ticketController.getAgents().stream()
+                    .filter(a -> groupUserIds.contains(a.getId()))
+                    .collect(java.util.stream.Collectors.toList());
+            // Gruba atamayı da kaydet
+            ticketController.assignTicketToGroup(ticketId, selectedGroup.getId());
+        } else {
+            agents = ticketController.getAgents();
+        }
+
         if (agents.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "Sistemde aktif agent bulunamadı.", "Agent Yok", JOptionPane.WARNING_MESSAGE);
+            JOptionPane.showMessageDialog(this, "No agents found in selected group.", "No Agents", JOptionPane.WARNING_MESSAGE);
             return;
         }
 
         com.helpdesk.application.dto.UserDTO selected =
                 (com.helpdesk.application.dto.UserDTO) JOptionPane.showInputDialog(
-                        this, "Agent seçin:", "Ticket Ata",
-                        JOptionPane.PLAIN_MESSAGE, null,
-                        agents.toArray(), agents.get(0));
+                        this, "Select agent:", "Step 2 — Assign Agent",
+                        JOptionPane.PLAIN_MESSAGE, null, agents.toArray(), agents.get(0));
         if (selected == null) return;
 
         try {
@@ -468,9 +500,10 @@ public class SupervisorDashboardFrame extends JFrame {
         tableModel.setRowCount(0);
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
-                t.getId(),            // Gizli ID kolonu — Change Status ve Assign Ticket için
+                t.getId(),
                 t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
-                t.getRequesterName(), // Kimin talep açtığını gösterir
+                t.getSlaLabel(),
+                t.getRequesterName(),
                 t.getCategoryName(),
                 t.getCreatedAt() != null ? t.getCreatedAt().toLocalDate().toString() : ""
             });

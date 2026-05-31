@@ -20,6 +20,19 @@ public class AssignController {
         this.userService = userService;
     }
 
+    @PostMapping("/supervisor/assign-group")
+    public String assignGroup(
+            @RequestParam Long ticketId,
+            @RequestParam(required = false) Long groupId,
+            HttpServletRequest req) {
+        UserDTO user = SessionUtil.getUser(req);
+        if (user == null) return "redirect:/login";
+        if (!"SUPERVISOR".equals(user.getRole()) && !"ADMIN".equals(user.getRole()))
+            return "redirect:/access-denied";
+        ticketService.assignGroup(ticketId, groupId);
+        return "redirect:/tickets/" + ticketId;
+    }
+
     @PostMapping("/supervisor/assign")
     public String assign(
             @RequestParam Long ticketId,

@@ -11,8 +11,10 @@ import org.springframework.stereotype.Service;
 import com.helpdesk.application.dto.CreateTicketRequest;
 import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.mapper.TicketMapper;
+import com.helpdesk.application.service.SlaService;
 import com.helpdesk.application.service.TicketService;
 import com.helpdesk.domain.entity.Category;
+import com.helpdesk.domain.entity.SlaSettings;
 import com.helpdesk.domain.entity.Group;
 import com.helpdesk.domain.entity.Ticket;
 import com.helpdesk.domain.entity.User;
@@ -25,9 +27,11 @@ import com.helpdesk.persistence.dao.TicketDAO;
 public class TicketServiceImpl implements TicketService {
 
     private final TicketDAO ticketDAO;
+    private final SlaService slaService;
 
-    public TicketServiceImpl(TicketDAO ticketDAO) {
+    public TicketServiceImpl(TicketDAO ticketDAO, SlaService slaService) {
         this.ticketDAO = ticketDAO;
+        this.slaService = slaService;
     }
 
     @Override
@@ -80,6 +84,11 @@ public class TicketServiceImpl implements TicketService {
         requester.setId(requesterId);
         ticket.setRequester(requester);
 
+        try {
+            SlaSettings sla = slaService.getByPriority(ticket.getPriority());
+            ticket.setSlaDueDate(LocalDateTime.now().plusMinutes(sla.getResolutionTimeMinutes()));
+        } catch (Exception ignored) {}
+
         Ticket saved = ticketDAO.save(ticket);
         return TicketMapper.toDTO(saved);
     }
@@ -114,9 +123,13 @@ public class TicketServiceImpl implements TicketService {
     public TicketDTO assignGroup(Long ticketId, Long groupId) {
         Ticket ticket = ticketDAO.findById(ticketId)
                 .orElseThrow(() -> new ResourceNotFoundException("Ticket not found: " + ticketId));
-        Group group = new Group();
-        group.setId(groupId);
-        ticket.setGroup(group);
+        if (groupId != null) {
+            Group group = new Group();
+            group.setId(groupId);
+            ticket.setGroup(group);
+        } else {
+            ticket.setGroup(null);
+        }
         ticketDAO.update(ticket);
         return TicketMapper.toDTO(ticket);
     }
