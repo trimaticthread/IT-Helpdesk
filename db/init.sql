@@ -110,6 +110,15 @@ CREATE TABLE IF NOT EXISTS sla_settings (
     resolution_time_minutes INT         NOT NULL
 );
 
+CREATE TABLE IF NOT EXISTS password_reset_requests (
+    id          BIGINT AUTO_INCREMENT PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    status      VARCHAR(20) DEFAULT 'PENDING',
+    created_at  TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    resolved_at TIMESTAMP NULL,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
 -- Roller
 INSERT INTO roles (name, description) VALUES ('ADMIN',      'Sistem yoneticisi');
 INSERT INTO roles (name, description) VALUES ('SUPERVISOR', 'Ekip yoneticisi');
