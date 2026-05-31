@@ -87,6 +87,26 @@ public class ViewTicketDialog extends JDialog {
         metaRow.add(makeBadge(ticket.getStatus(), statusColor(ticket.getStatus())));
         metaRow.add(makeBadge(ticket.getPriority(), priorityColor(ticket.getPriority())));
 
+        // SLA badge
+        if (ticket.getSlaDueDate() != null) {
+            Color slaFg = new Color(100, 110, 130);
+            Color slaBg = new Color(245, 247, 250);
+            String slaStatus = ticket.getSlaStatus();
+            if ("breached".equals(slaStatus)) { slaFg = new Color(198, 40, 40);  slaBg = new Color(255, 235, 238); }
+            else if ("warning".equals(slaStatus)) { slaFg = new Color(230, 81, 0);  slaBg = new Color(255, 253, 231); }
+            else if ("met".equals(slaStatus))     { slaFg = new Color(46, 125, 50); slaBg = new Color(232, 245, 233); }
+            else if ("ok".equals(slaStatus))      { slaFg = new Color(21, 101, 192); slaBg = new Color(227, 242, 253); }
+            metaRow.add(makeBadge("SLA: " + ticket.getSlaLabel(), slaFg, slaBg));
+        }
+
+        // Grup bilgisi
+        if (ticket.getGroupName() != null) {
+            JLabel groupLabel = new JLabel("Group: " + ticket.getGroupName());
+            groupLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
+            groupLabel.setForeground(new Color(100, 110, 130));
+            metaRow.add(groupLabel);
+        }
+
         // Kategori etiketi
         JLabel categoryLabel = new JLabel("Category: " + nvl(ticket.getCategoryName(), "-"));
         categoryLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
@@ -344,6 +364,12 @@ public class ViewTicketDialog extends JDialog {
         badge.setBackground(bg);
         badge.setOpaque(true);
         badge.setBorder(new EmptyBorder(3, 8, 3, 8));
+        return badge;
+    }
+
+    private JLabel makeBadge(String text, Color fg, Color bg) {
+        JLabel badge = makeBadge(text, bg);
+        badge.setForeground(fg);
         return badge;
     }
 

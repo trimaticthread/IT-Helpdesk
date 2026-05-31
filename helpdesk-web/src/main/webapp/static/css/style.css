@@ -140,18 +140,20 @@ tbody tr:hover { background: #fafbfd; }
     text-transform: uppercase;
     letter-spacing: 0.4px;
 }
-.badge-new         { background: #e3f2fd; color: #1565c0; }
-.badge-open        { background: #e8f5e9; color: #2e7d32; }
+/* Status badges — açık renk zemin, koyu metin */
+.badge-new         { background: #e3f2fd; color: #1565c0; }          /* mavi   — yeni geldi, normal */
+.badge-open        { background: #e0f7fa; color: #00695c; }          /* teal   — sıraya girdi */
 .badge-in-progress,
-.badge-in_progress { background: #fff8e1; color: #e65100; }
-.badge-pending     { background: #fce4ec; color: #880e4f; }
-.badge-resolved    { background: #e8f5e9; color: #1b5e20; border: 1px solid #a5d6a7; }
-.badge-closed      { background: #f5f5f5; color: #757575; }
+.badge-in_progress { background: #ede7f6; color: #4527a0; }          /* mor    — üzerinde çalışılıyor */
+.badge-pending     { background: #fffde7; color: #f57f17; }          /* sarı   — beklemede */
+.badge-resolved    { background: #e8f5e9; color: #2e7d32; }          /* yeşil  — çözüldü ✓ */
+.badge-closed      { background: #f5f5f5; color: #757575; }          /* gri    — kapatıldı */
 
-.badge-low      { background: #e3f9e5; color: #1b5e20; }
-.badge-medium   { background: #fff8e1; color: #f57f17; }
-.badge-high     { background: #fff3e0; color: #e65100; }
-.badge-critical { background: #fce4ec; color: #880e4f; }
+/* Priority badges — öncelik arttıkça renk kızarır */
+.badge-low      { background: #f5f5f5; color: #616161; }             /* gri    — düşük öncelik */
+.badge-medium   { background: #e3f2fd; color: #1565c0; }             /* mavi   — orta */
+.badge-high     { background: #fff3e0; color: #e65100; }             /* turuncu — yüksek */
+.badge-critical { background: #ffebee; color: #c62828; }
 
 /* ── FORMS ──────────────────────────────────────────────────────────────── */
 .form-group { margin-bottom: 16px; }

@@ -6,6 +6,7 @@ import com.helpdesk.application.dto.TicketDTO;
 import com.helpdesk.application.dto.UserDTO;
 import com.helpdesk.application.service.CategoryService;
 import com.helpdesk.application.service.CommentService;
+import com.helpdesk.application.service.GroupService;
 import com.helpdesk.application.service.TicketService;
 import com.helpdesk.application.service.UserService;
 import com.helpdesk.domain.enums.TicketStatus;
@@ -28,15 +29,18 @@ public class TicketController {
     private final CategoryService categoryService;
     private final CommentService commentService;
     private final UserService userService;
+    private final GroupService groupService;
 
     public TicketController(TicketService ticketService,
                             CategoryService categoryService,
                             CommentService commentService,
-                            UserService userService) {
+                            UserService userService,
+                            GroupService groupService) {
         this.ticketService = ticketService;
         this.categoryService = categoryService;
         this.commentService = commentService;
         this.userService = userService;
+        this.groupService = groupService;
     }
 
     // ── GET /tickets ──────────────────────────────────────────────────────────
@@ -238,7 +242,12 @@ public class TicketController {
                     return "agent/ticket-detail";
                 case "SUPERVISOR":
                 case "ADMIN":
-                    model.addAttribute("agents", userService.findByRole("AGENT"));
+                    model.addAttribute("groups", groupService.getAllGroups());
+                    if (ticket.getGroupId() != null) {
+                        model.addAttribute("agents", groupService.getUsersInGroup(ticket.getGroupId()));
+                    } else {
+                        model.addAttribute("agents", userService.findByRole("AGENT"));
+                    }
                     return "supervisor/ticket-detail";
                 default:
                     return "customer/ticket-detail";

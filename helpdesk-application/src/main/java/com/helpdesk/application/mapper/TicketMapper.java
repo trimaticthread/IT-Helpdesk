@@ -33,6 +33,7 @@ public class TicketMapper {
             dto.setGroupId(ticket.getGroup().getId());
             dto.setGroupName(ticket.getGroup().getName());
         }
+        dto.setSlaDueDate(ticket.getSlaDueDate());
         return dto;
     }
 }

@@ -72,6 +72,44 @@ public class TicketDTO {
     public LocalDateTime getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(LocalDateTime updatedAt) { this.updatedAt = updatedAt; }
 
+    private LocalDateTime slaDueDate;
+    public LocalDateTime getSlaDueDate() { return slaDueDate; }
+    public void setSlaDueDate(LocalDateTime slaDueDate) { this.slaDueDate = slaDueDate; }
+
+    public String getSlaDueDateFormatted() {
+        if (slaDueDate == null) return "—";
+        return slaDueDate.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));
+    }
+
+    public String getSlaStatus() {
+        if (slaDueDate == null) return "unknown";
+        if ("RESOLVED".equals(status) || "CLOSED".equals(status)) return "met";
+        java.time.LocalDateTime now = java.time.LocalDateTime.now();
+        if (now.isAfter(slaDueDate)) return "breached";
+        if (now.isAfter(slaDueDate.minusHours(2))) return "warning";
+        return "ok";
+    }
+
+    public String getSlaLabel() {
+        switch (getSlaStatus()) {
+            case "breached": return "SLA Breached";
+            case "warning":  return "Due Soon";
+            case "met":      return "SLA Met";
+            case "ok":       return "On Track";
+            default:         return "—";
+        }
+    }
+
+    public String getSlaBadgeStyle() {
+        switch (getSlaStatus()) {
+            case "breached": return "background:#ffebee;color:#c62828;border-radius:12px;padding:3px 9px;font-size:11px;font-weight:700;";
+            case "warning":  return "background:#fffde7;color:#f57f17;border-radius:12px;padding:3px 9px;font-size:11px;font-weight:700;";
+            case "met":      return "background:#e8f5e9;color:#2e7d32;border-radius:12px;padding:3px 9px;font-size:11px;font-weight:700;";
+            case "ok":       return "background:#e3f2fd;color:#1565c0;border-radius:12px;padding:3px 9px;font-size:11px;font-weight:700;";
+            default:         return "background:#f5f5f5;color:#757575;border-radius:12px;padding:3px 9px;font-size:11px;font-weight:700;";
+        }
+    }
+
     public String getCreatedAtFormatted() {
         if (createdAt == null) return "";
         return createdAt.format(DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm"));

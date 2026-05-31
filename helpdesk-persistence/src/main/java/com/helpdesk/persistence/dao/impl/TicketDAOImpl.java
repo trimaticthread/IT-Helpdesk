@@ -46,11 +46,13 @@ public class TicketDAOImpl implements TicketDAO {
             "SELECT t.*, " +
             "       req.first_name AS req_first, req.last_name AS req_last, " +
             "       asgn.first_name AS asgn_first, asgn.last_name AS asgn_last, " +
-            "       cat.name AS cat_name " +
+            "       cat.name AS cat_name, " +
+            "       grp.name AS grp_name " +
             "FROM tickets t " +
             "JOIN users req ON t.requester_id = req.id " +
             "LEFT JOIN users asgn ON t.assignee_id = asgn.id " +
-            "JOIN categories cat ON t.category_id = cat.id ";
+            "JOIN categories cat ON t.category_id = cat.id " +
+            "LEFT JOIN groups_ grp ON t.group_id = grp.id ";
 
     public TicketDAOImpl(JdbcTemplate jdbcTemplate) {
         this.jdbcTemplate = jdbcTemplate;
@@ -110,6 +112,7 @@ public class TicketDAOImpl implements TicketDAO {
             if (!rs.wasNull()) {
                 Group group = new Group();
                 group.setId(groupId);
+                group.setName(rs.getString("grp_name"));
                 ticket.setGroup(group);
             }
 
@@ -171,8 +174,8 @@ public class TicketDAOImpl implements TicketDAO {
     public Ticket save(Ticket ticket) {
         String sql = "INSERT INTO tickets " +
                 "(ticket_number, title, description, status, priority, category_id, " +
-                "requester_id, assignee_id, group_id, created_at, updated_at) " +
-                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())";
+                "requester_id, assignee_id, group_id, created_at, updated_at, sla_due_date) " +
+                "VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW(), ?)";
         KeyHolder keyHolder = new GeneratedKeyHolder();
         jdbcTemplate.update(connection -> {
             PreparedStatement ps = connection.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
@@ -187,6 +190,9 @@ public class TicketDAOImpl implements TicketDAO {
             else ps.setNull(8, java.sql.Types.BIGINT);
             if (ticket.getGroup() != null) ps.setLong(9, ticket.getGroup().getId());
             else ps.setNull(9, java.sql.Types.BIGINT);
+            if (ticket.getSlaDueDate() != null)
+                ps.setTimestamp(10, java.sql.Timestamp.valueOf(ticket.getSlaDueDate()));
+            else ps.setNull(10, java.sql.Types.TIMESTAMP);
             return ps;
         }, keyHolder);
         Number key = keyHolder.getKey();
