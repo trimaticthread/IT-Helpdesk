@@ -1,14 +1,13 @@
-# IT Helpdesk Ticket System
+# IT Helpdesk Ticket Management System
 
-> A support ticket management system built with N-Tier architecture for a university project.
-> Same backend, different frontends — accessible from both desktop and (future) web.
-> Inspired by real-world systems like Jira Service Management and Zammad.
+> A full-stack IT support ticket management system built with a clean N-Tier architecture.
+> Same backend, two frontends — a native desktop application (Swing) and a browser-based web application (Spring MVC + JSP).
+
+**Developers:** Sina Toprak Güleç · Ahmet Furkan Poyraz
 
 ---
 
-## Quick Start (Setup Guide)
-
-Follow these steps to get the project running on your machine.
+## Quick Start
 
 ### Prerequisites
 
@@ -19,7 +18,7 @@ Follow these steps to get the project running on your machine.
 | Docker Desktop | 24.x | [docker.com](https://www.docker.com/products/docker-desktop) |
 | IntelliJ IDEA | Any | [jetbrains.com](https://www.jetbrains.com/idea) |
 
-### Step 1 — Clone the repository
+### Step 1 — Clone
 
 ```bash
 git clone https://github.com/trimaticthread/IT-Helpdesk.git
@@ -28,213 +27,207 @@ cd IT-Helpdesk
 
 ### Step 2 — Start the database
 
-Make sure Docker Desktop is running, then:
-
 ```bash
 docker-compose up -d
 ```
 
-This starts a MySQL 8.0 container. On first run, the database schema is **automatically initialized** from `db/init.sql` — no manual SQL execution needed.
-
-**Connection details (for DataGrip / DBeaver):**
+The database schema and initial data are automatically loaded from `db/init.sql` on first run.
 
 | Field | Value |
 |-------|-------|
 | Host | `localhost` |
 | Port | `3306` |
+| Database | `helpdesk_db` |
 | User | `helpdesk_user` |
 | Password | `helpdesk_pass` |
-| Database | `helpdesk_db` |
 
-### Step 3 — Open in IntelliJ IDEA
+### Step 3 — Run the Desktop App
 
-1. Open IntelliJ IDEA → **File → Open** → select the `IT-Helpdesk` folder
-2. IntelliJ will detect the multi-module Maven project automatically
-3. Wait for Maven to download dependencies (first run may take a few minutes)
+1. Open the project in IntelliJ IDEA
+2. Navigate to `helpdesk-desktop/.../DesktopApplication.java`
+3. Click the green **Run** button
 
-### Step 4 — Run the application
+### Step 4 — Run the Web App
 
-1. Navigate to `helpdesk-desktop/src/main/java/com/helpdesk/desktop/DesktopApplication.java`
-2. Click the green **Run** button next to `main()`
-3. The login window will appear
-
-### Default Test Accounts
-
-| Role | Username | Password |
-|------|----------|----------|
-| Admin | `trimaticthread` | `Haziran2002` |
-| Supervisor | `RequemArcade` | `MuratDugan123` |
-| Agent | `sclexx3002` | `Kaancımya123` |
-| Customer | `basibozuk` | `bozukbasi123` |
+1. Navigate to `helpdesk-web/.../WebApplication.java`
+2. Click the green **Run** button
+3. Open [http://localhost:8080](http://localhost:8080) in your browser
 
 ---
 
-## What is This?
+## Test Accounts
 
-A system that manages IT support requests (tickets).
-A user reports a problem, an agent resolves it, a supervisor monitors the team, and an admin controls everything.
-In short: you write "my internet isn't working", someone shows up and fixes it.
+All accounts use the password: **`password`**
 
-The desktop application is a real native window — written with Swing, no browser required.
-A web version (Servlet + JSP) is planned for a future release.
-Both share the same backend — same Service, same DAO, same database.
+| Role | Username | Access |
+|------|----------|--------|
+| Admin | `trimaticthread` | User management, system settings, SLA, groups |
+| Supervisor | `muro` | All tickets, assign agents/groups, reports |
+| Agent (IT) | `aliyildiz` | Assigned tickets, status updates, internal notes |
+| Agent (Software) | `sclexx` | Assigned tickets, status updates, internal notes |
+| Agent (Hardware) | `emredemir` | Assigned tickets, status updates, internal notes |
+| Customer | `basibozuk` | Open tickets, track status, add comments |
+
+> On first login after a password reset, users are forced to change their password.
+
+---
+
+## What Does It Do?
+
+An IT helpdesk is where employees report technical problems and get them resolved. This system manages that workflow end-to-end:
+
+- **Customer** opens a ticket describing their problem
+- **Supervisor** reviews it, assigns it to a group and an agent
+- **Agent** works on it, updates status, adds internal notes
+- **Supervisor** monitors SLA compliance, views reports, closes resolved tickets
+- **Admin** manages users, departments, categories, groups, and SLA settings
 
 ---
 
 ## Technology Stack
 
-| Component | Technology | Version | Why? |
-|-----------|-----------|---------|------|
-| Language | Java | 21 LTS | Stable, runs everywhere |
-| Framework | Spring Boot | 3.2.5 | Handles dependency injection and configuration |
-| Desktop UI | Swing (FlatLaf) | JDK built-in | Real native window, no extra dependencies |
-| Web UI | JSP + JSTL | Servlet 5.x | Browser-accessible interface (planned) |
-| Data Access | JDBC / JdbcTemplate | Spring 6.x | Hand-written SQL, no ORM — you know exactly what's happening |
-| Database | MySQL | 8.0 | Classic, reliable, widely known |
-| Build | Maven | 3.9+ | Multi-module project management |
-| Container | Docker | 24.x | Eliminates "works on my machine" excuses |
+| Layer | Technology | Notes |
+|-------|-----------|-------|
+| Language | Java 21 LTS | |
+| Framework | Spring Boot 3.2.5 | DI, auto-configuration |
+| Desktop UI | Java Swing | Native window, no browser required |
+| Web UI | Spring MVC + JSP + JSTL | Browser-based interface |
+| Auth (Web) | Session + Filter | Custom AuthFilter, no Spring Security |
+| Data Access | JdbcTemplate | Hand-written SQL, no ORM |
+| Database | MySQL 8.0 | Runs in Docker |
+| Build | Maven (multi-module) | 5 modules, enforced layering |
+| Container | Docker | Portable, reproducible DB setup |
 
 ---
 
 ## Architecture (N-Tier)
 
 ```
-┌──────────────────────────────────────────────┐
-│            PRESENTATION TIER                 │
-│  helpdesk-desktop       helpdesk-web         │
-│  (Swing Window)         (Servlet + JSP)      │
-└──────────────────┬───────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────┐
-│           BUSINESS LOGIC TIER                │
-│           helpdesk-application               │
-│        Service + DTO + Mapper                │
-└──────────────────┬───────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────┐
-│            DATA ACCESS TIER                  │
-│           helpdesk-persistence               │
-│         DAO Interface + Impl (JDBC)          │
-└──────────────────┬───────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────┐
-│              DOMAIN TIER                     │
-│            helpdesk-domain                   │
-│     Entity (POJO) + Enum + Exception         │
-└──────────────────┬───────────────────────────┘
-                   │
-┌──────────────────▼───────────────────────────┐
-│            DATABASE TIER                     │
-│                MySQL                         │
-└──────────────────────────────────────────────┘
+┌────────────────────────────────────────────────┐
+│               PRESENTATION TIER                │
+│   helpdesk-desktop          helpdesk-web       │
+│   (Swing + Controllers)     (Spring MVC + JSP) │
+└─────────────────────┬──────────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────────┐
+│              BUSINESS LOGIC TIER               │
+│              helpdesk-application              │
+│          Service + DTO + Mapper                │
+└─────────────────────┬──────────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────────┐
+│               DATA ACCESS TIER                 │
+│              helpdesk-persistence              │
+│           DAO Interface + JDBC Impl            │
+└─────────────────────┬──────────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────────┐
+│                DOMAIN TIER                     │
+│               helpdesk-domain                  │
+│        Entity (POJO) + Enum + Exception        │
+└─────────────────────┬──────────────────────────┘
+                      │
+┌─────────────────────▼──────────────────────────┐
+│                  DATABASE                      │
+│               MySQL 8.0 (Docker)              │
+└────────────────────────────────────────────────┘
 ```
 
-The rule is simple: **each layer only communicates with the layer directly below it.**
-A Controller cannot touch a DAO. A Service cannot write SQL. The architecture enforces this.
+**Rule:** Each layer only talks to the layer directly below it. A Controller cannot touch a DAO. A Service never writes SQL.
 
-In the desktop app there is no HTTP: the Swing Controller calls the Service directly.
-In the web app there is HTTP: Browser → Servlet → Service. But Service and DAO are shared.
+In the desktop app there is no HTTP — the Swing Controller calls the Service directly in-process.
+In the web app there is HTTP — Browser → Spring MVC Controller → Service. Both share the exact same Service, DAO, and database.
 
 ---
 
 ## Module Structure
 
-Each layer lives in its own Maven module. They cannot reach into each other's internals (enforced at compile time).
-
 ```
 IT-Helpdesk/
-├── helpdesk-domain/          → Entity (POJO), Enum, Exception — no framework dependencies
-├── helpdesk-persistence/     → DAO Interface + Impl — SQL via JDBC
-├── helpdesk-application/     → Service + DTO + Mapper — business logic lives here
-├── helpdesk-desktop/         → Swing View + Controller — native desktop window
-└── helpdesk-web/             → Servlet + JSP — browser interface (planned)
+├── helpdesk-domain/        Entity, Enum, Exception — zero framework dependencies
+├── helpdesk-persistence/   DAO interface + JDBC implementation
+├── helpdesk-application/   Service layer, DTO, Mapper — all business logic lives here
+├── helpdesk-desktop/       Swing UI + Desktop controllers
+├── helpdesk-web/           Spring MVC controllers + JSP views
+└── db/
+    └── init.sql            Database schema + seed data
 ```
 
-### Dependency Chain
+---
 
-| Module | Depends On | Technology |
-|--------|-----------|-----------|
-| `helpdesk-domain` | Nothing | Pure Java POJO |
-| `helpdesk-persistence` | domain | JDBC / JdbcTemplate |
-| `helpdesk-application` | domain + persistence | Spring (service layer) |
-| `helpdesk-desktop` | application | Swing + Spring Boot |
-| `helpdesk-web` | application | Servlet + JSP + JSTL |
+## Key Features
+
+### Ticket Management
+- Full ticket lifecycle: NEW → OPEN → IN_PROGRESS → PENDING → RESOLVED → CLOSED
+- Status locking: CLOSED tickets cannot be modified; agents cannot close tickets directly
+- Internal comments: visible only to agents and supervisors, hidden from customers
+
+### SLA (Service Level Agreement)
+- Resolution time targets configured per priority (CRITICAL / HIGH / MEDIUM / LOW) by admin
+- Automatically calculated on ticket creation
+- Visual indicators on ticket lists: **On Track** / **Due Soon** / **SLA Breached** / **SLA Met**
+
+### Group-Based Assignment
+- Admin creates groups and assigns agents to them
+- Supervisor assigns a ticket to a group → agent list filters to that group's members → agent is selected
+- Enables team-based routing (IT Support, Software, Hardware, etc.)
+
+### Role-Based Access Control (RBAC)
+| Role | Capabilities |
+|------|-------------|
+| ADMIN | Manage users, categories, departments, groups, SLA settings |
+| SUPERVISOR | View all tickets, change status, assign groups and agents, view reports |
+| AGENT | View assigned tickets, update status, add public/internal comments |
+| CUSTOMER | Open tickets, track their own tickets, add comments |
+
+### Password Reset Flow
+- Admin resets a user's password → temporary password set to `password`
+- Users can self-request a reset via "Forgot Password" on the login page
+- Admin approves requests from the admin panel → temporary password applied
+- Forced password change on first login after any reset
+
+### Web Interface
+- Login with session-based authentication and AuthFilter protection
+- Role-specific dashboards and navigation
+- Ticket creation, detail view, commenting, status updates
+- Admin panel: full CRUD for users, categories, departments, groups, SLA
+- Supervisor: ticket list with SLA column, group + agent assignment, reports
 
 ---
 
 ## Database Tables
 
-| Table | Description | Notes |
-|-------|-------------|-------|
-| `users` | Everyone who logs in | Admin, agent, customer... |
-| `roles` | User roles | ADMIN, SUPERVISOR, AGENT, CUSTOMER |
-| `groups_` | Teams | Trailing underscore because `groups` is a reserved keyword in MySQL |
-| `categories` | Ticket categories | Network Issue, Software Bug, Hardware Failure... |
-| `tickets` | Support requests | The main point of the whole system |
-| `comments` | Comments on tickets | `is_internal=true` means the customer cannot see it |
-| `attachments` | File attachments | Screenshots, log files, etc. |
-| `user_roles` | N:M join table | Which user has which role |
-| `group_users` | N:M join table | Who belongs to which group |
-
----
-
-## Ticket Lifecycle
-
-```
-NEW → OPEN → IN_PROGRESS → PENDING → RESOLVED → CLOSED
-                               |
-               Customer sends more info
-               → back to IN_PROGRESS
-```
-
-| Status | Meaning |
-|--------|---------|
-| `NEW` | Just opened, no one has looked at it yet |
-| `OPEN` | Open, waiting for an agent to pick it up |
-| `IN_PROGRESS` | Agent is actively working on it |
-| `PENDING` | Waiting for information from the customer |
-| `RESOLVED` | Solved — will close once the customer confirms |
-| `CLOSED` | Done. Everyone is happy (hopefully) |
-
----
-
-## Roles (RBAC)
-
-| Role | What They Can Do |
-|------|-----------------|
-| `ADMIN` | God mode. Full access — create/delete users, view all tickets, assign, generate reports |
-| `SUPERVISOR` | Team lead. Assign tickets to agents, monitor all tickets, view reports |
-| `AGENT` | Support staff. Resolve tickets, add internal notes. The ones doing the real work |
-| `CUSTOMER` | End user. Opens their own ticket and tracks it — cannot see anyone else's |
-
----
-
-## Design Patterns
-
-| Pattern | Where | What It Does |
-|---------|-------|-------------|
-| MVC | Swing Controller → Service → View | Each component has a single responsibility |
-| DTO | Between layers | Entities never leave the backend; DTOs are passed instead. Security by design |
-| DAO | Persistence layer | Abstracts JDBC; the Service layer has no SQL knowledge |
-| Factory | Ticket creation | Produces the right object based on type |
-| Observer | Status changes | Notifies relevant parties when a ticket status changes |
-| Strategy | Auto-assignment | Switches between different assignment rules |
-| Singleton | Spring Beans | One instance per class, saves memory |
-| Builder | DTO / Entity | Makes constructing objects with many parameters readable |
+| Table | Description |
+|-------|-------------|
+| `users` | All system users |
+| `roles` | ADMIN, SUPERVISOR, AGENT, CUSTOMER |
+| `user_roles` | N:M — user to role mapping |
+| `departments` | Organizational departments |
+| `groups_` | Agent teams (underscore because `groups` is a MySQL reserved word) |
+| `group_users` | N:M — agent to group mapping |
+| `categories` | Ticket categories (Network Issue, Software Bug, etc.) |
+| `tickets` | Support requests — the core of the system |
+| `comments` | Ticket comments; `is_internal=true` hides from customers |
+| `sla_settings` | Resolution time targets per priority |
+| `password_reset_requests` | Self-service password reset requests pending admin approval |
+| `attachments` | File attachments (schema ready) |
 
 ---
 
 ## Project Status
 
-- [x] Architecture design and documentation
-- [x] Docker + MySQL setup
-- [x] Multi-module Maven structure
-- [x] Domain layer (POJO Entity + Enum + Exception)
-- [x] Persistence layer (DAO Interface + JDBC Impl)
+- [x] Multi-module Maven project structure
+- [x] Docker + MySQL setup with automatic schema initialization
+- [x] Domain layer (Entity, Enum, Exception)
+- [x] Persistence layer (DAO + JDBC)
 - [x] Application layer (Service + DTO + Mapper)
-- [x] Desktop layer (Swing View + Controller — all 4 role dashboards complete)
-- [x] Web layer (Spring MVC + JSP — login + auth + session complete, customer flow in progress)
+- [x] Desktop application — all 4 role dashboards complete
+- [x] Web application — all role flows complete (Customer, Agent, Supervisor, Admin)
+- [x] SLA system — auto-calculation + visual indicators
+- [x] Group-based ticket assignment
+- [x] Password reset flow (admin-initiated + self-service)
+- [x] Role-based access control on both desktop and web
 
 ---
 
-*University Project — 2026*
+*University Project — 2026 · Sina Toprak Güleç · Ahmet Furkan Poyraz*

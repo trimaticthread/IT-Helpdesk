@@ -1,415 +1,302 @@
-# IT Helpdesk - Mimari Tasarim Dokumani
+# IT Helpdesk — Mimari Tasarım Dokümanı
 
-## 1. Proje Modeli
-
-Spotify modeli: Ayni backend, farkli arayuzler. Kullanici uygulamayi hem desktop hem web uzerinden kullanabilir.
-
-- **Desktop App:** Spring Boot + Swing (gercek masaustu uygulamasi, kendi penceresi var)
-- **Web App:** Spring Boot + JSP + JSTL (sunucuda calisan, tarayicidan erisilen) — sonra eklenecek
+**Proje:** IT Helpdesk Ticket Management System  
+**Geliştiriciler:** Sina Toprak Güleç · Ahmet Furkan Poyraz  
+**Yıl:** 2026
 
 ---
 
-## 2. Buyuk Resim (N-Tier Architecture)
+## 1. Genel Mimari Model
+
+Aynı backend, iki farklı arayüz. Tüm iş mantığı ve veri erişimi tek bir yerde (servis katmanı) toplanmış; hem masaüstü hem web uygulaması bu katmanı paylaşır.
+
+- **Desktop:** Spring Boot + Java Swing — tarayıcı gerektirmez, gerçek masaüstü penceresi
+- **Web:** Spring Boot + Spring MVC + JSP/JSTL — tarayıcıdan erişilir, port 8080
+
+---
+
+## 2. N-Tier Katmanlı Mimari
 
 ```
-┌─────────────────────────────────────────┐
-│         PRESENTATION TIER               │
-│  helpdesk-desktop    helpdesk-web       │
-│  (Swing)             (Servlet +         │
-│                       JSP/JSTL)        │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│           BUSINESS LOGIC TIER           │
-│          helpdesk-application/          │
-│     (service, dto, mapper)              │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│            DATA ACCESS TIER             │
-│          helpdesk-persistence/          │
-│        (dao interface + impl)           │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│             DOMAIN TIER                 │
-│           helpdesk-domain/              │
-│     (entity, enum, exception)           │
-└─────────────────┬───────────────────────┘
-                  │
-┌─────────────────▼───────────────────────┐
-│            DATABASE TIER                │
-│               MySQL                     │
-└─────────────────────────────────────────┘
+┌────────────────────────────────────────────────────┐
+│                  PRESENTATION TIER                 │
+│   helpdesk-desktop            helpdesk-web         │
+│   Swing View + Controller     Spring MVC + JSP     │
+└──────────────────────┬─────────────────────────────┘
+                       │  (Method call / HTTP)
+┌──────────────────────▼─────────────────────────────┐
+│               BUSINESS LOGIC TIER                  │
+│               helpdesk-application                 │
+│          Service Interface + Impl                  │
+│          DTO (Data Transfer Object)                │
+│          Mapper (Entity ↔ DTO)                     │
+└──────────────────────┬─────────────────────────────┘
+                       │
+┌──────────────────────▼─────────────────────────────┐
+│                DATA ACCESS TIER                    │
+│               helpdesk-persistence                 │
+│          DAO Interface + JdbcTemplate Impl         │
+└──────────────────────┬─────────────────────────────┘
+                       │
+┌──────────────────────▼─────────────────────────────┐
+│                  DOMAIN TIER                       │
+│                helpdesk-domain                     │
+│      Entity (POJO) · Enum · Exception              │
+│      Sıfır framework bağımlılığı                   │
+└──────────────────────┬─────────────────────────────┘
+                       │
+┌──────────────────────▼─────────────────────────────┐
+│                   DATABASE                         │
+│              MySQL 8.0 (Docker)                   │
+└────────────────────────────────────────────────────┘
 ```
 
-### Modul Bagimlilik Zinciri
+**Temel kural:** Her katman yalnızca bir alt katmanla konuşur. Controller → Service → DAO → DB. Bir Controller hiçbir zaman DAO'ya doğrudan erişemez.
+
+---
+
+## 3. Maven Multi-Module Yapısı
+
+```
+IT-Helpdesk/                       ← Parent POM (root)
+├── helpdesk-domain/               ← 1. Katman: Entity, Enum, Exception
+├── helpdesk-persistence/          ← 2. Katman: DAO Interface + JDBC Impl
+├── helpdesk-application/          ← 3. Katman: Service + DTO + Mapper
+├── helpdesk-desktop/              ← 4a. Sunum: Swing + Desktop Controller
+├── helpdesk-web/                  ← 4b. Sunum: Spring MVC Controller + JSP
+└── db/
+    └── init.sql                   ← Schema + seed data
+```
+
+### Modül Bağımlılık Zinciri
 
 ```
 helpdesk-desktop ──→ helpdesk-application ──→ helpdesk-persistence ──→ helpdesk-domain
 helpdesk-web ──────→ helpdesk-application ──→ helpdesk-persistence ──→ helpdesk-domain
 ```
 
-- Her modul SADECE bir alt katmani dependency olarak alir
-- desktop/web ayni application'i kullanir (Spotify modeli)
+Maven bağımlılık yönü tek yönlüdür; döngüsel bağımlılık mümkün değildir.
 
 ---
 
-## 3. Multi-Module Maven Yapisi
+## 4. Katman Detayları
+
+### 4.1 helpdesk-domain
+
+Framework bağımlılığı sıfır. Saf Java POJO'ları.
 
 ```
-helpdesk-system/                        (parent POM)
-│
-├── helpdesk-domain/                    # Domain katmani (saf Java)
-│   └── src/main/java/com/helpdesk/domain/
-│       ├── entity/                     # Entity siniflari (JPA annotations yok, saf POJO)
-│       ├── enums/                      # Enum tipleri (Status, Role, Priority...)
-│       └── exception/                  # Domain-specific exception siniflari
-│
-├── helpdesk-persistence/               # Veri erisim katmani (JDBC)
-│   └── src/main/java/com/helpdesk/persistence/
-│       ├── dao/                        # DAO interface'leri
-│       └── dao/impl/                   # DAO implementasyonlari (JDBC/JdbcTemplate)
-│
-├── helpdesk-application/               # Is mantigi katmani
-│   └── src/main/java/com/helpdesk/application/
-│       ├── service/                    # Service interface'leri
-│       ├── service/impl/              # Service implementasyonlari
-│       ├── dto/                        # Data Transfer Object'ler
-│       └── mapper/                     # Entity <-> DTO donusturuculer
-│
-├── helpdesk-desktop/                   # Desktop uygulamasi (oncelikli)
-│   └── src/main/java/com/helpdesk/desktop/
-│       ├── controller/                 # Swing Controller siniflari (UI olaylarini yakalar)
-│       ├── view/                       # Swing UI siniflari (JFrame, JPanel vb.)
-│       ├── config/                     # Spring konfigurasyonu
-│       └── security/                   # Giris/oturum yonetimi
-│
-└── helpdesk-web/                       # Web uygulamasi (sonra eklenecek)
-    └── src/main/java/com/helpdesk/web/
-        ├── servlet/                    # HttpServlet siniflari
-        ├── filter/                     # Guvenlik/session filtreleri
-        └── config/                     # Web konfigurasyonu
-    └── src/main/resources/
-        └── webapp/
-            ├── WEB-INF/jsp/            # JSP dosyalari
-            └── WEB-INF/web.xml         # Servlet konfigurasyonu
+domain/
+├── entity/          User, Ticket, Comment, Category, Group, Department,
+│                    SlaSettings, PasswordResetRequest, Attachment
+├── enums/           TicketStatus (NEW/OPEN/IN_PROGRESS/PENDING/RESOLVED/CLOSED)
+│                    TicketPriority (LOW/MEDIUM/HIGH/CRITICAL)
+│                    RoleType (ADMIN/SUPERVISOR/AGENT/CUSTOMER)
+└── exception/       BusinessException, ResourceNotFoundException, UnauthorizedException
 ```
 
-### Modul Bagimliliklari (pom.xml)
+### 4.2 helpdesk-persistence
 
-| Modul | Bagimliliklar | Teknoloji |
-|-------|---------------|-----------|
-| helpdesk-domain | YOK | Saf Java POJO |
-| helpdesk-persistence | helpdesk-domain | JDBC / JdbcTemplate |
-| helpdesk-application | helpdesk-domain, helpdesk-persistence | - |
-| helpdesk-desktop | helpdesk-application | Swing, Spring Boot |
-| helpdesk-web | helpdesk-application | Servlet, JSP, JSTL |
-
----
-
-## 4. N-Tier Katman Detaylari (Desktop)
+DAO (Data Access Object) pattern. Tüm SQL bu katmanda yaşar; üst katmanlar SQL bilmez.
 
 ```
-┌─────────────────────────────────┐
-│  1. PRESENTATION LAYER          │  Swing (JFrame, JPanel, JTable...)
-│     Kullanicinin gordugu arayuz │
-└──────────────┬──────────────────┘
-               │ Kullanici Aksiyonu (buton tiklama vb.)
-┌──────────────▼──────────────────┐
-│  2. CONTROLLER LAYER            │  Swing Controller siniflari
-│     Arayuz olaylarini yakalar   │
-└──────────────┬──────────────────┘
-               │ DTO
-┌──────────────▼──────────────────┐
-│  3. SERVICE LAYER               │  Interface + Impl
-│     Is mantigi, validasyon      │
-└──────────────┬──────────────────┘
-               │ Entity
-┌──────────────▼──────────────────┐
-│  4. DAO LAYER                   │  Interface + Impl (JDBC)
-│     Veri erisim soyutlamasi     │
-└──────────────┬──────────────────┘
-               │ JDBC / JdbcTemplate
-┌──────────────▼──────────────────┐
-│  5. DATABASE LAYER              │  MySQL
-│     Veri depolama               │
-└─────────────────────────────────┘
+persistence/
+└── dao/
+    ├── TicketDAO / TicketDAOImpl        (JdbcTemplate + JOIN queries)
+    ├── UserDAO / UserDAOImpl
+    ├── CommentDAO / CommentDAOImpl
+    ├── CategoryDAO / CategoryDAOImpl
+    ├── GroupDAO / GroupDAOImpl
+    ├── DepartmentDAO / DepartmentDAOImpl
+    ├── SlaDAO / SlaDAOImpl
+    ├── RoleDAO / RoleDAOImpl
+    └── PasswordResetRequestDAO / Impl
 ```
 
-### Katmanlar Arasi Iletisim Kurallari
+**Tasarım kararları:**
+- ORM yok — JdbcTemplate ile elle yazılmış SQL
+- JOIN sorgular için özel RowMapper sınıfları
+- Interface üzerinden bağımlılık (DIP prensibi)
 
-- Swing Controller → ASLA dogrudan DAO'ya erismez
-- Swing Controller → ASLA dogrudan Entity dondurmez (DTO kullanir)
-- Service → ASLA dogrudan SQL yazmaz (DAO kullanir)
-- DAO → ASLA is mantigi icermez (sadece CRUD, SQL burada)
-- Swing View → ASLA Service/DAO bilmez (sadece Controller ile konusur)
+### 4.3 helpdesk-application
 
----
-
-## 5. N-Tier Katman Detaylari (Web)
+Tüm iş mantığı burada. Service katmanı hem desktop hem web tarafından kullanılır.
 
 ```
-┌─────────────────────────────────┐
-│  1. PRESENTATION LAYER          │  JSP + JSTL
-│     Kullanicinin gordugu sayfa  │
-└──────────────┬──────────────────┘
-               │ HTTP Request/Response
-┌──────────────▼──────────────────┐
-│  2. SERVLET LAYER               │  HttpServlet siniflari
-│     HTTP isteklerini yakalar    │
-└──────────────┬──────────────────┘
-               │ DTO
-┌──────────────▼──────────────────┐
-│  3. SERVICE LAYER               │  Ayni service (Desktop ile ortak!)
-│     Is mantigi, validasyon      │
-└──────────────┬──────────────────┘
-               │ Entity
-┌──────────────▼──────────────────┐
-│  4. DAO LAYER                   │  Ayni DAO (Desktop ile ortak!)
-│     Veri erisim soyutlamasi     │
-└──────────────┬──────────────────┘
-               │ JDBC / JdbcTemplate
-┌──────────────▼──────────────────┐
-│  5. DATABASE LAYER              │  Ayni MySQL (Desktop ile ortak!)
-│     Veri depolama               │
-└─────────────────────────────────┘
-```
-
----
-
-## 6. Paket Yapisi (Detayli)
-
-### helpdesk-domain (saf Java — framework bagimsiz)
-```
-com.helpdesk.domain/
-│
-├── entity/
-│   ├── Ticket.java
-│   ├── User.java
-│   ├── Comment.java
-│   ├── Attachment.java
-│   ├── Role.java
-│   ├── Permission.java
-│   ├── Group.java
-│   └── Category.java
-│
-├── enums/
-│   ├── TicketStatus.java          (NEW, OPEN, IN_PROGRESS, PENDING, RESOLVED, CLOSED)
-│   ├── TicketPriority.java        (CRITICAL, HIGH, MEDIUM, LOW)
-│   └── RoleType.java              (ADMIN, SUPERVISOR, AGENT, CUSTOMER)
-│
-└── exception/
-    ├── ResourceNotFoundException.java
-    ├── UnauthorizedException.java
-    └── BusinessException.java
-```
-
-### helpdesk-persistence (JDBC)
-```
-com.helpdesk.persistence/
-│
-├── dao/
-│   ├── TicketDAO.java              (interface)
-│   ├── UserDAO.java                (interface)
-│   ├── CommentDAO.java             (interface)
-│   ├── AttachmentDAO.java          (interface)
-│   ├── RoleDAO.java                (interface)
-│   └── CategoryDAO.java            (interface)
-│
-└── dao/impl/
-    ├── TicketDAOImpl.java          (JDBC/JdbcTemplate ile SQL)
-    ├── UserDAOImpl.java
-    ├── CommentDAOImpl.java
-    ├── AttachmentDAOImpl.java
-    ├── RoleDAOImpl.java
-    └── CategoryDAOImpl.java
-```
-
-### helpdesk-application (is mantigi)
-```
-com.helpdesk.application/
-│
+application/
 ├── service/
-│   ├── TicketService.java          (interface)
-│   ├── UserService.java            (interface)
-│   ├── CommentService.java         (interface)
-│   └── AuthService.java            (interface)
-│
-├── service/impl/
-│   ├── TicketServiceImpl.java
-│   ├── UserServiceImpl.java
-│   ├── CommentServiceImpl.java
-│   └── AuthServiceImpl.java
-│
-├── dto/
-│   ├── TicketDTO.java
-│   ├── UserDTO.java
-│   ├── CreateTicketRequest.java
-│   ├── UpdateTicketRequest.java
-│   └── LoginRequest.java
-│
-└── mapper/
-    ├── TicketMapper.java
-    └── UserMapper.java
+│   ├── AuthService / AuthServiceImpl      (BCrypt ile login doğrulama)
+│   ├── TicketService / TicketServiceImpl  (CRUD, SLA hesaplama, atama)
+│   ├── UserService / UserServiceImpl      (CRUD, şifre yönetimi, rol atama)
+│   ├── GroupService / GroupServiceImpl    (Grup CRUD, üye yönetimi)
+│   ├── SlaService / SlaServiceImpl        (SLA ayarları)
+│   ├── CategoryService / CategoryServiceImpl
+│   ├── DepartmentService / DepartmentServiceImpl
+│   ├── CommentService / CommentServiceImpl
+│   └── PasswordResetRequestService / Impl (Şifre sıfırlama talep akışı)
+├── dto/                   TicketDTO, UserDTO, CommentDTO  (Entity'ler katmanlar arası taşınmaz)
+└── mapper/                TicketMapper, UserMapper, CommentMapper
 ```
 
-### helpdesk-desktop (Swing masaustu uygulamasi)
+**SLA Hesaplama:**  
+Ticket oluşturulurken `TicketServiceImpl.create()` → `SlaService.getByPriority()` → `sla_due_date = now + resolutionMinutes`
+
+### 4.4 helpdesk-desktop
+
+Swing tabanlı native masaüstü uygulaması. Spring Boot uygulama context'i üzerinden bean injection çalışır.
+
 ```
-com.helpdesk.desktop/
-│
-├── view/
-│   ├── LoginFrame.java
-│   ├── DashboardFrame.java
-│   ├── TicketListPanel.java
-│   └── TicketDetailPanel.java
-│
-├── controller/
-│   ├── TicketController.java
-│   ├── UserController.java
-│   ├── AuthController.java
-│   └── DashboardController.java
-│
+desktop/
+├── DesktopApplication.java          (Spring Boot main — Swing thread'inde başlar)
+├── config/AppConfig.java            (Spring bean tanımları)
+├── security/SessionManager.java     (Aktif kullanıcıyı hafızada tutar)
+├── controller/                      (AuthController, TicketController, UserController,
+│                                     GroupController, CategoryController,
+│                                     DepartmentController, SlaController)
+└── view/
+    ├── LoginFrame.java
+    ├── DashboardFrame.java          (Admin — 5 yönetim sekmesi)
+    ├── SupervisorDashboardFrame.java (Ticket listesi + SLA kolonu + grup→agent atama)
+    ├── AgentDashboardFrame.java
+    ├── CustomerDashboardFrame.java
+    ├── ViewTicketDialog.java         (Ticket detay + yorum + SLA/group bilgisi)
+    ├── CreateTicketDialog.java
+    ├── ChangePasswordDialog.java
+    └── panel/  UserManagementPanel, CategoryManagementPanel,
+                DepartmentManagementPanel, GroupManagementPanel, SlaManagementPanel
+```
+
+**HTTP yok.** Swing Controller → Service method call → DAO → MySQL.
+
+### 4.5 helpdesk-web
+
+Spring MVC + JSP/JSTL tabanlı web uygulaması. Port 8080'de çalışır.
+
+```
+web/
+├── WebApplication.java
 ├── config/
-│   └── AppConfig.java
-│
-├── security/
-│   └── SessionManager.java
-│
-└── DesktopApplication.java           (main class)
-```
-
-### helpdesk-web (Servlet + JSP)
-```
-com.helpdesk.web/
-│
-├── servlet/
-│   ├── TicketServlet.java
-│   ├── UserServlet.java
-│   ├── AuthServlet.java
-│   └── DashboardServlet.java
-│
+│   ├── AppConfig.java
+│   └── WebConfig.java              (Filter kayıtları + AdminInterceptor)
 ├── filter/
-│   ├── AuthFilter.java               (session kontrolu)
+│   ├── AuthFilter.java             (Oturum kontrolü — Spring Security kullanılmadı)
 │   └── EncodingFilter.java
-│
-└── config/
-    └── AppConfig.java
-
-webapp/
-└── WEB-INF/
-    ├── web.xml
-    └── jsp/
-        ├── login.jsp
-        ├── dashboard.jsp
-        ├── ticket-list.jsp
-        └── ticket-detail.jsp
+├── interceptor/
+│   └── AdminInterceptor.java       (Her admin sayfasına pendingResetCount inject eder)
+├── controller/
+│   ├── AuthController.java         (/login, /logout, şifre reset forced-change)
+│   ├── DashboardController.java    (/dashboard, /error, /access-denied)
+│   ├── TicketController.java       (/tickets, /tickets/{id}, /tickets/new)
+│   ├── CommentController.java      (/tickets/comment)
+│   ├── AssignController.java       (/supervisor/assign, /supervisor/assign-group)
+│   ├── ReportsController.java      (/supervisor/reports)
+│   ├── ChangePasswordController.java
+│   ├── ForgotPasswordController.java
+│   └── admin/  UserController, CategoryController, DepartmentController,
+│               GroupController, SlaController, ResetRequestController
+└── webapp/WEB-INF/jsp/
+    ├── auth/     login.jsp, forgot-password.jsp, change-password.jsp
+    ├── common/   layout.jsp (navbar + custom modal), error.jsp, access-denied.jsp
+    ├── admin/    users, categories, departments, groups, sla, reset-requests
+    ├── supervisor/ ticket-list, ticket-detail, reports
+    ├── agent/    ticket-list, ticket-detail
+    └── customer/ dashboard, my-tickets, create-ticket, ticket-detail
 ```
 
+**HTTP akışı:** Browser → AuthFilter → Spring MVC DispatcherServlet → Controller → Service → DAO → MySQL → JSP render.
+
 ---
 
-## 7. Veri Akisi Ornegi
+## 5. Güvenlik Tasarımı
 
-### Desktop (Ticket Olusturma)
+### Desktop
+- `SessionManager` singleton: giriş yapan kullanıcıyı bellekte tutar
+- Her kritik işlemde rol kontrolü yapılır
+- CLOSED/RESOLVED ticket kilitleri servis katmanında uygulanır
+
+### Web
+- `AuthFilter`: tüm istekleri yakalar; oturum yoksa `/login`'e yönlendirir
+- `passwordResetRequired` session flag: zorunlu şifre değişimi bypass'ı engeller
+- Rol bazlı erişim her controller metodunda manuel olarak kontrol edilir
+- Internal comment'lar customer'dan gizlenir (servis katmanında filtrelenir)
+- Spring Security kasıtlı olarak kullanılmadı — filter zinciri elle yazıldı
+
+---
+
+## 6. Veritabanı Şeması
+
 ```
-Kullanici Swing formunu doldurur
-        ↓
-Swing Controller: Formdaki verileri CreateTicketRequest (DTO) olarak toplar
-        ↓
-Service: DTO → Entity donusturur, is kurallarini uygular
-        ↓
-DAO: JDBC ile Entity'yi veritabanina kaydeder (SQL burada)
-        ↓
-Service: Entity → DTO donusturur
-        ↓
-Swing Controller: DTO'yu arayuzde gosterir (JTable, JLabel vb.)
-        ↓
-Kullanici sonucu pencerede gorur
+users ──< user_roles >── roles
+  │
+  ├──< tickets >── categories
+  │      │
+  │      ├──< comments (author_id → users)
+  │      ├── assignee_id → users
+  │      └── group_id → groups_
+  │
+  └──< group_users >── groups_
+
+sla_settings          (priority bazlı SLA süreleri)
+departments           (organizasyon birimleri)
+password_reset_requests (şifre sıfırlama talep kuyruğu)
 ```
 
-### Web (Ticket Olusturma)
+**Not:** MySQL'de `groups` reserved keyword olduğu için tablo adı `groups_` olarak tanımlandı.
+
+---
+
+## 7. Ticket Yaşam Döngüsü
+
 ```
-Kullanici JSP formunu doldurur (HTTP POST)
-        ↓
-Servlet: HttpServletRequest'ten parametreleri alir, DTO olusturur
-        ↓
-Service: Ayni service! DTO → Entity, is kurallari
-        ↓
-DAO: Ayni DAO! JDBC ile veritabanina kaydeder
-        ↓
-Service: Entity → DTO
-        ↓
-Servlet: DTO'yu request attribute olarak set eder, JSP'ye yonlendirir
-        ↓
-JSP + JSTL: DTO'yu sayfada gosterir
+     [Customer]                [Supervisor]              [Agent]
+         │                          │                       │
+    Ticket açar                     │                       │
+         │──── NEW ────────────────►│                       │
+                                    │  Grup + Agent atar    │
+                                    │──── OPEN ────────────►│
+                                                    Agent çalışmaya başlar
+                                                       IN_PROGRESS
+                                                    Müşteri bilgisi bekler
+                                                        PENDING
+                                                    Çözüm uygulandı
+                                                       RESOLVED
+                                    │◄── doğrula ──────────│
+                            Supervisor kapatır
+                                  CLOSED
 ```
 
-NOT: Desktop'ta HTTP yok. Swing Controller, Service'i dogrudan Java method call ile cagirir.
-Web'de HTTP Request/Response akisi var. Ama Service ve DAO katmanlari her ikisinde ORTAKTIR.
+**Kilitler:**
+- Agent: RESOLVED veya CLOSED ticket'ı değiştiremez; CLOSED yapamaz
+- Supervisor: CLOSED ticket'ı değiştiremez / agent atayamaz
 
 ---
 
-## 8. Teknoloji Stack
+## 8. Tasarım Desenleri
 
-| Bilesen | Teknoloji | Versiyon |
-|---------|-----------|----------|
-| Java | Eclipse Temurin | 21 LTS |
-| Framework | Spring Boot | 3.2.5 |
-| UI (Desktop) | Swing | JDK ile gelir |
-| UI (Web) | JSP + JSTL | Servlet 5.x |
-| Veri Erisimi | JDBC / JdbcTemplate | Spring 6.x |
-| Veritabani | MySQL | 8.0+ |
-| Build Tool | Maven | 3.9+ |
-| Container | Docker + Docker Compose | 24.x |
-
----
-
-## 9. Design Patterns
-
-| Pattern | Kullanim Alani |
-|---------|---------------|
-| MVC | Controller/Servlet - Service - View akisi |
-| DTO | Katmanlar arasi veri tasima |
-| DAO | Veri erisim soyutlamasi (JDBC implementasyonu) |
-| Factory | Ticket turlerine gore nesne olusturma |
-| Observer | Ticket durum degisikligi bildirimleri |
-| Strategy | Otomatik atama algoritmalari |
-| Singleton | Spring Bean'ler (default scope) |
-| Builder | DTO/Entity olusturma |
+| Desen | Nerede Kullanıldı |
+|-------|------------------|
+| **MVC** | Tüm katmanlar — View, Controller, Model (Service) ayrımı |
+| **DAO (Repository)** | Persistence katmanı — SQL'i iş mantığından ayırır |
+| **DTO** | Katmanlar arası veri taşıma — Entity'ler dışarı çıkmaz |
+| **Mapper** | Entity ↔ DTO dönüşümü — her iki yön için static metodlar |
+| **PRG (Post-Redirect-Get)** | Web form submit'lerinde duplicate POST önleme |
+| **Session** | Web auth — HttpSession üzerinden kullanıcı state tutma |
+| **Filter Chain** | Web güvenlik — AuthFilter → EncodingFilter → Controller |
+| **Interceptor** | Admin sayfalarına cross-cutting veri inject etme |
+| **Singleton** | Spring Bean'ler — uygulama başına bir instance |
 
 ---
 
-## 10. RBAC (Rol Tabanli Erisim Kontrolu)
+## 9. Teknoloji Seçim Gerekçeleri
 
-| Rol | Aciklama |
-|-----|----------|
-| ADMIN | Sistem uzerinde tam yetki |
-| SUPERVISOR | Ekip yonetimi, raporlama |
-| AGENT | Ticket cozme, guncelleme |
-| CUSTOMER | Kendi ticketlarini olusturma/takip |
-
----
-
-## 11. Gelistirme Ortami ve Araclar
-
-| Arac | Kullanim |
-|------|----------|
-| **Docker** | MySQL container'da calisir |
-| **DataGrip** | Docker'daki MySQL'e baglanip veritabani yonetimi |
-| **IntelliJ IDEA** | Proje implementasyonu |
-| **Claude (Agent)** | Asistan — yonlendirme, kod yazmaz |
-
-### Workflow
-
-1. Docker ile MySQL container ayaga kalkar
-2. DataGrip ile Docker MySQL'e baglanilir, veritabani/tablolar olusturulur
-3. IntelliJ'de Maven multi-module proje olusturulur
-4. Once domain → persistence → application → desktop sirasinda implemente edilir
-5. Desktop tamamlaninca web modulu eklenir (ayni application kullanilir)
+| Karar | Neden |
+|-------|-------|
+| JdbcTemplate (ORM yok) | SQL sorguları tam kontrol altında; JOIN davranışı şeffaf |
+| Spring Security yok | Filter zinciri elle yazılarak auth mekanizması tam anlaşılır kılındı |
+| JSP + JSTL (React/Angular yok) | Sunucu taraflı render; Java ekosistemine uygun |
+| Docker | "Bende çalışıyor" sorununu ortadan kaldırır; tek komutla DB ayağa kalkar |
+| Multi-module Maven | Derleme zamanında katman ihlalleri tespit edilir |
 
 ---
 
-## 12. Gelistirme Onceligi
-
-1. **Simdi (Vize):** helpdesk-domain → helpdesk-persistence → helpdesk-application → helpdesk-desktop
-2. **Sonra (Final):** helpdesk-web (ayni application'i kullanarak, sadece Servlet + JSP eklenir)
+*Sina Toprak Güleç · Ahmet Furkan Poyraz — 2026*
