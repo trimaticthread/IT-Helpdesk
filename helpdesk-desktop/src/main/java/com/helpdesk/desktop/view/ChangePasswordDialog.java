@@ -21,7 +21,7 @@ public class ChangePasswordDialog extends JDialog {
     private JLabel errorLabel;
 
     public ChangePasswordDialog(Frame parent, UserController userController) {
-        super(parent, "Şifre Değiştirme Zorunlu", true);
+        super(parent, "Password Change Required", true);
         this.userController = userController;
         setDefaultCloseOperation(DO_NOTHING_ON_CLOSE); // kapatılamaz
         initUI();
@@ -41,12 +41,12 @@ public class ChangePasswordDialog extends JDialog {
         banner.setLayout(new BoxLayout(banner, BoxLayout.Y_AXIS));
         banner.setBorder(new EmptyBorder(20, 30, 18, 30));
 
-        JLabel title = new JLabel("Şifrenizi Değiştirmeniz Gerekiyor");
+        JLabel title = new JLabel("You Must Change Your Password");
         title.setFont(new Font("Segoe UI", Font.BOLD, 15));
         title.setForeground(Color.WHITE);
         title.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel sub = new JLabel("Geçici şifreniz sıfırlandı. Lütfen yeni bir şifre belirleyin.");
+        JLabel sub = new JLabel("Your password has been reset. Please set a new password to continue.");
         sub.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         sub.setForeground(new Color(255, 210, 210));
         sub.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -62,7 +62,7 @@ public class ChangePasswordDialog extends JDialog {
         form.setBackground(Color.WHITE);
         form.setBorder(new EmptyBorder(24, 32, 16, 32));
 
-        form.add(makeLabel("Yeni Şifre"));
+        form.add(makeLabel("New Password"));
         form.add(Box.createVerticalStrut(5));
         newPasswordField = new JPasswordField();
         newPasswordField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -72,7 +72,7 @@ public class ChangePasswordDialog extends JDialog {
 
         form.add(Box.createVerticalStrut(14));
 
-        form.add(makeLabel("Yeni Şifre (Tekrar)"));
+        form.add(makeLabel("Confirm New Password"));
         form.add(Box.createVerticalStrut(5));
         confirmPasswordField = new JPasswordField();
         confirmPasswordField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -95,7 +95,7 @@ public class ChangePasswordDialog extends JDialog {
         bottom.setBackground(Color.WHITE);
         bottom.setBorder(new EmptyBorder(0, 0, 8, 8));
 
-        JButton saveButton = new JButton("Şifreyi Kaydet");
+        JButton saveButton = new JButton("Save Password");
         saveButton.setFont(new Font("Segoe UI", Font.BOLD, 13));
         saveButton.setBackground(new Color(41, 98, 255));
         saveButton.setForeground(Color.WHITE);
@@ -123,15 +123,15 @@ public class ChangePasswordDialog extends JDialog {
         String confirm = new String(confirmPasswordField.getPassword());
 
         if (newPw.isEmpty()) {
-            errorLabel.setText("Şifre boş bırakılamaz.");
+            errorLabel.setText("Password is required.");
             return;
         }
         if (newPw.length() < 6) {
-            errorLabel.setText("Şifre en az 6 karakter olmalıdır.");
+            errorLabel.setText("Password must be at least 6 characters.");
             return;
         }
         if (!newPw.equals(confirm)) {
-            errorLabel.setText("Şifreler eşleşmiyor.");
+            errorLabel.setText("Passwords do not match.");
             confirmPasswordField.setText("");
             return;
         }
@@ -142,7 +142,7 @@ public class ChangePasswordDialog extends JDialog {
             passwordChanged = true;
             dispose();
         } catch (Exception ex) {
-            errorLabel.setText("Hata: " + ex.getMessage());
+            errorLabel.setText("Error:" + ex.getMessage());
         }
     }
 

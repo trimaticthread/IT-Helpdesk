@@ -193,7 +193,7 @@ public class CreateTicketDialog extends JDialog {
             submitted = true;
             dispose();
         } catch (Exception ex) {
-            errorLabel.setText("Hata: " + ex.getMessage());
+            errorLabel.setText("Error: " + ex.getMessage());
         }
     }
 

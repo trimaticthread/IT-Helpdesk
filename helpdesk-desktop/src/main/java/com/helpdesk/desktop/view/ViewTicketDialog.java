@@ -84,8 +84,8 @@ public class ViewTicketDialog extends JDialog {
         metaRow.setOpaque(false);
         metaRow.setBorder(new EmptyBorder(8, 0, 10, 0));
 
-        metaRow.add(makeBadge(ticket.getStatus(), statusColor(ticket.getStatus())));
-        metaRow.add(makeBadge(ticket.getPriority(), priorityColor(ticket.getPriority())));
+        metaRow.add(makeBadge(ticket.getStatusDisplay(), statusColor(ticket.getStatus())));
+        metaRow.add(makeBadge(ticket.getPriorityDisplay(), priorityColor(ticket.getPriority())));
 
         // SLA badge
         if (ticket.getSlaDueDate() != null) {
@@ -96,7 +96,7 @@ public class ViewTicketDialog extends JDialog {
             else if ("warning".equals(slaStatus)) { slaFg = new Color(230, 81, 0);  slaBg = new Color(255, 253, 231); }
             else if ("met".equals(slaStatus))     { slaFg = new Color(46, 125, 50); slaBg = new Color(232, 245, 233); }
             else if ("ok".equals(slaStatus))      { slaFg = new Color(21, 101, 192); slaBg = new Color(227, 242, 253); }
-            metaRow.add(makeBadge("SLA: " + ticket.getSlaLabel(), slaFg, slaBg));
+            metaRow.add(makeBadge(ticket.getSlaLabel(), slaFg, slaBg));
         }
 
         // Grup bilgisi
@@ -214,7 +214,7 @@ public class ViewTicketDialog extends JDialog {
             commentInput.setBackground(new Color(245, 245, 245));
             commentInput.setForeground(new Color(150, 150, 150));
             addCommentBtn.setEnabled(false);
-            inputLabel.setText("Ticket " + ticket.getStatus() + " — yorum ve internal note yazılamaz.");
+            inputLabel.setText("Ticket is " + ticket.getStatusDisplay() + " — comments cannot be added.");
             inputLabel.setForeground(new Color(180, 60, 60));
             if (internalCheckBox != null) {
                 internalCheckBox.setEnabled(false);
