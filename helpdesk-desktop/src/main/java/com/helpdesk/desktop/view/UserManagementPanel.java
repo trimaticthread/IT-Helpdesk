@@ -193,13 +193,13 @@ public class UserManagementPanel extends JPanel {
         Long id = (Long) tableModel.getValueAt(row, 0);
         String username = (String) tableModel.getValueAt(row, 1);
         int confirm = JOptionPane.showConfirmDialog(this,
-                "'" + username + "' kullanıcısının şifresi password olarak sıfırlanacak.\nDevam?",
-                "Şifre Sıfırla", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
+                "Reset password for '" + username + "'? Their temporary password will be set to 'password'.",
+                "Reset Password", JOptionPane.YES_NO_OPTION, JOptionPane.WARNING_MESSAGE);
         if (confirm == JOptionPane.YES_OPTION) {
             userController.resetPassword(id);
             JOptionPane.showMessageDialog(this,
-                    "Şifre sıfırlandı. Geçici şifre: password\nKullanıcı ilk girişte şifresini değiştirmek zorundadır.",
-                    "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                    "Password reset. Temporary password: password\nUser will be required to change it on next login.",
+                    "Success", JOptionPane.INFORMATION_MESSAGE);
         }
     }
 }

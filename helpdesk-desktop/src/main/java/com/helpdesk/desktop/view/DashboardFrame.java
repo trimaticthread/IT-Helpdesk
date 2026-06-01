@@ -33,11 +33,13 @@ public class DashboardFrame extends JFrame {
     private final DepartmentController departmentController;
     private final GroupController groupController;
     private final SlaController slaController;
+    private final com.helpdesk.desktop.controller.PasswordResetRequestController prrController;
 
     public DashboardFrame(AuthController authController, TicketController ticketController,
                           UserController userController, CategoryController categoryController,
                           DepartmentController departmentController, GroupController groupController,
-                          SlaController slaController) {
+                          SlaController slaController,
+                          com.helpdesk.desktop.controller.PasswordResetRequestController prrController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
@@ -45,6 +47,7 @@ public class DashboardFrame extends JFrame {
         this.departmentController = departmentController;
         this.groupController = groupController;
         this.slaController = slaController;
+        this.prrController = prrController;
         initUI();
     }
 
@@ -87,7 +90,7 @@ public class DashboardFrame extends JFrame {
             authController.logout();
             dispose();
             new LoginFrame(authController, ticketController, userController,
-                    categoryController, departmentController, groupController, slaController)
+                    categoryController, departmentController, groupController, slaController, prrController)
                     .setVisible(true);
         });
 
@@ -102,11 +105,12 @@ public class DashboardFrame extends JFrame {
         tabbedPane.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         tabbedPane.setBorder(new EmptyBorder(8, 8, 8, 8));
 
-        tabbedPane.addTab("Users",        new UserManagementPanel(userController, departmentController));
-        tabbedPane.addTab("Categories",   new CategoryManagementPanel(categoryController));
-        tabbedPane.addTab("Departments",  new DepartmentManagementPanel(departmentController));
-        tabbedPane.addTab("Groups",       new GroupManagementPanel(groupController, userController));
-        tabbedPane.addTab("SLA Settings", new SlaManagementPanel(slaController));
+        tabbedPane.addTab("Users",           new UserManagementPanel(userController, departmentController));
+        tabbedPane.addTab("Categories",      new CategoryManagementPanel(categoryController));
+        tabbedPane.addTab("Departments",     new DepartmentManagementPanel(departmentController));
+        tabbedPane.addTab("Groups",          new GroupManagementPanel(groupController, userController));
+        tabbedPane.addTab("SLA Settings",    new SlaManagementPanel(slaController));
+        tabbedPane.addTab("Reset Requests",  new ResetRequestsPanel(prrController));
 
         root.add(tabbedPane, BorderLayout.CENTER);
     }

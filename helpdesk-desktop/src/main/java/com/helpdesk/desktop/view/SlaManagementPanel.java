@@ -52,7 +52,7 @@ public class SlaManagementPanel extends JPanel {
         toolbar.add(refreshButton);
 
         // ─── SLA TABLOSU ─────────────────────────────────────────────────────
-        String[] columns = {"Priority", "Response Time (min)", "Resolution Time (min)", "Response (saat)", "Resolution (saat)"};
+        String[] columns = {"Priority", "Response Time (min)", "Resolution Time (min)", "Response", "Resolution"};
         tableModel = new DefaultTableModel(columns, 0) {
             @Override public boolean isCellEditable(int r, int c) { return false; }
         };
@@ -130,10 +130,10 @@ public class SlaManagementPanel extends JPanel {
     }
 
     private String formatMinutes(int minutes) {
-        if (minutes < 60) return minutes + " dk";
+        if (minutes < 60) return minutes + " min";
         int h = minutes / 60;
         int m = minutes % 60;
-        return m == 0 ? h + " saat" : h + " saat " + m + " dk";
+        return m == 0 ? h + " hr" : h + " hr " + m + " min";
     }
 
     private void editSelectedSla() {
@@ -149,11 +149,11 @@ public class SlaManagementPanel extends JPanel {
 
         JPanel panel = new JPanel(new GridLayout(0, 2, 8, 8));
         panel.add(new JLabel("Priority:")); panel.add(new JLabel(priorityName));
-        panel.add(new JLabel("Response Time (dk):")); panel.add(respField);
-        panel.add(new JLabel("Resolution Time (dk):")); panel.add(resolField);
+        panel.add(new JLabel("Response Time (min):")); panel.add(respField);
+        panel.add(new JLabel("Resolution Time (min):")); panel.add(resolField);
 
         int result = JOptionPane.showConfirmDialog(this, panel,
-                "SLA Düzenle — " + priorityName,
+                "Edit SLA — " + priorityName,
                 JOptionPane.OK_CANCEL_OPTION, JOptionPane.PLAIN_MESSAGE);
 
         if (result == JOptionPane.OK_OPTION) {
@@ -163,11 +163,11 @@ public class SlaManagementPanel extends JPanel {
                 TicketPriority priority = TicketPriority.valueOf(priorityName);
                 slaController.updateSla(priority, resp, resol);
                 loadSla();
-                JOptionPane.showMessageDialog(this, "SLA güncellendi.", "Başarılı", JOptionPane.INFORMATION_MESSAGE);
+                JOptionPane.showMessageDialog(this, "SLA settings updated.", "Success", JOptionPane.INFORMATION_MESSAGE);
             } catch (NumberFormatException ex) {
-                JOptionPane.showMessageDialog(this, "Lütfen geçerli sayı girin.", "Hata", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, "Please enter valid numbers.", "Error", JOptionPane.ERROR_MESSAGE);
             } catch (Exception ex) {
-                JOptionPane.showMessageDialog(this, ex.getMessage(), "Hata", JOptionPane.ERROR_MESSAGE);
+                JOptionPane.showMessageDialog(this, ex.getMessage(), "Error", JOptionPane.ERROR_MESSAGE);
             }
         }
     }

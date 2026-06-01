@@ -47,13 +47,16 @@ public class SupervisorDashboardFrame extends JFrame {
     private boolean showResolved = false;
     private boolean showClosed = false;
 
+    private final com.helpdesk.desktop.controller.PasswordResetRequestController prrController;
+
     public SupervisorDashboardFrame(AuthController authController,
                                     TicketController ticketController,
                                     UserController userController,
                                     com.helpdesk.desktop.controller.CategoryController categoryController,
                                     com.helpdesk.desktop.controller.DepartmentController departmentController,
                                     com.helpdesk.desktop.controller.GroupController groupController,
-                                    com.helpdesk.desktop.controller.SlaController slaController) {
+                                    com.helpdesk.desktop.controller.SlaController slaController,
+                                    com.helpdesk.desktop.controller.PasswordResetRequestController prrController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
@@ -61,6 +64,7 @@ public class SupervisorDashboardFrame extends JFrame {
         this.departmentController = departmentController;
         this.groupController = groupController;
         this.slaController = slaController;
+        this.prrController = prrController;
         initUI();
         loadTickets();
     }
@@ -106,7 +110,7 @@ public class SupervisorDashboardFrame extends JFrame {
         logoutButton.addActionListener(e -> {
             authController.logout();
             dispose();
-            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            new LoginFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController, prrController).setVisible(true);
         });
 
         rightTop.add(welcomeLabel);
@@ -501,7 +505,7 @@ public class SupervisorDashboardFrame extends JFrame {
         for (TicketDTO t : currentTickets) {
             tableModel.addRow(new Object[]{
                 t.getId(),
-                t.getTicketNumber(), t.getTitle(), t.getStatus(), t.getPriority(),
+                t.getTicketNumber(), t.getTitle(), t.getStatusDisplay(), t.getPriorityDisplay(),
                 t.getSlaLabel(),
                 t.getRequesterName(),
                 t.getCategoryName(),

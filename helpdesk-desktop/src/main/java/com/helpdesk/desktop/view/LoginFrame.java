@@ -4,6 +4,7 @@ import com.helpdesk.desktop.controller.AuthController;
 import com.helpdesk.desktop.controller.CategoryController;
 import com.helpdesk.desktop.controller.DepartmentController;
 import com.helpdesk.desktop.controller.GroupController;
+import com.helpdesk.desktop.controller.PasswordResetRequestController;
 import com.helpdesk.desktop.controller.SlaController;
 import com.helpdesk.desktop.controller.TicketController;
 import com.helpdesk.desktop.controller.UserController;
@@ -36,6 +37,7 @@ public class LoginFrame extends JFrame {
     private final DepartmentController departmentController;
     private final GroupController groupController;
     private final SlaController slaController;
+    private final PasswordResetRequestController prrController;
 
     private JTextField usernameField;
     private JPasswordField passwordField;
@@ -44,7 +46,7 @@ public class LoginFrame extends JFrame {
     public LoginFrame(AuthController authController, TicketController ticketController,
                       UserController userController, CategoryController categoryController,
                       DepartmentController departmentController, GroupController groupController,
-                      SlaController slaController) {
+                      SlaController slaController, PasswordResetRequestController prrController) {
         this.authController = authController;
         this.ticketController = ticketController;
         this.userController = userController;
@@ -52,6 +54,7 @@ public class LoginFrame extends JFrame {
         this.departmentController = departmentController;
         this.groupController = groupController;
         this.slaController = slaController;
+        this.prrController = prrController;
         initUI();
     }
 
@@ -76,7 +79,7 @@ public class LoginFrame extends JFrame {
         titleLabel.setForeground(Color.WHITE);
         titleLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
 
-        JLabel subLabel = new JLabel("Destek Talep Sistemi");
+        JLabel subLabel = new JLabel("Support Ticket System");
         subLabel.setFont(new Font("Segoe UI", Font.PLAIN, 13));
         subLabel.setForeground(new Color(160, 175, 200));
         subLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
@@ -93,7 +96,7 @@ public class LoginFrame extends JFrame {
         form.setBackground(Color.WHITE);
         form.setBorder(new EmptyBorder(32, 40, 32, 40));
 
-        form.add(makeFieldLabel("Kullanici Adi"));
+        form.add(makeFieldLabel("Username"));
         form.add(Box.createVerticalStrut(5));
         usernameField = new JTextField();
         usernameField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -103,7 +106,7 @@ public class LoginFrame extends JFrame {
 
         form.add(Box.createVerticalStrut(16));
 
-        form.add(makeFieldLabel("Sifre"));
+        form.add(makeFieldLabel("Password"));
         form.add(Box.createVerticalStrut(5));
         passwordField = new JPasswordField();
         passwordField.setFont(new Font("Segoe UI", Font.PLAIN, 13));
@@ -113,7 +116,7 @@ public class LoginFrame extends JFrame {
 
         form.add(Box.createVerticalStrut(24));
 
-        JButton loginButton = new JButton("Giris Yap");
+        JButton loginButton = new JButton("Sign In");
         loginButton.setFont(new Font("Segoe UI", Font.BOLD, 14));
         loginButton.setBackground(new Color(41, 98, 255));
         loginButton.setForeground(Color.WHITE);
@@ -125,7 +128,7 @@ public class LoginFrame extends JFrame {
 
         form.add(Box.createVerticalStrut(8));
 
-        JButton forgotButton = new JButton("Şifremi Unuttum");
+        JButton forgotButton = new JButton("Forgot Password");
         forgotButton.setFont(new Font("Segoe UI", Font.PLAIN, 12));
         forgotButton.setForeground(new Color(100, 130, 200));
         forgotButton.setBorderPainted(false);
@@ -133,9 +136,20 @@ public class LoginFrame extends JFrame {
         forgotButton.setFocusPainted(false);
         forgotButton.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
         forgotButton.setAlignmentX(Component.LEFT_ALIGNMENT);
-        forgotButton.addActionListener(e -> JOptionPane.showMessageDialog(this,
-                "Şifrenizi unuttuysanız lütfen sistem yöneticinize başvurun.\nYönetici şifrenizi geçici olarak sıfırlayacaktır.",
-                "Şifremi Unuttum", JOptionPane.INFORMATION_MESSAGE));
+        forgotButton.addActionListener(e -> {
+            String input = JOptionPane.showInputDialog(this,
+                    "Enter your username or email address:",
+                    "Forgot Password", JOptionPane.PLAIN_MESSAGE);
+            if (input == null || input.trim().isEmpty()) return;
+            String error = prrController.submitRequest(input.trim());
+            if (error != null) {
+                JOptionPane.showMessageDialog(this, error, "Error", JOptionPane.WARNING_MESSAGE);
+            } else {
+                JOptionPane.showMessageDialog(this,
+                        "Your request has been submitted.\nOnce approved by an administrator, your password will be reset to 'password'.\nYou can try logging in with that password shortly.",
+                        "Request Submitted", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
         form.add(forgotButton);
 
         form.add(Box.createVerticalStrut(4));
@@ -179,15 +193,15 @@ public class LoginFrame extends JFrame {
         String password = new String(passwordField.getPassword());
 
         if (username.isEmpty() && password.isEmpty()) {
-            errorLabel.setText("Kullanici adi ve sifre bos birakilamaz.");
+            errorLabel.setText("Username and password are required.");
             return;
         }
         if (username.isEmpty()) {
-            errorLabel.setText("Kullanici adi bos birakilamaz.");
+            errorLabel.setText("Username is required.");
             return;
         }
         if (password.isEmpty()) {
-            errorLabel.setText("Sifre bos birakilamaz.");
+            errorLabel.setText("Password is required.");
             return;
         }
 
@@ -207,7 +221,7 @@ public class LoginFrame extends JFrame {
             dispose();
             openDashboardForRole(SessionManager.getCurrentUser().getRole());
         } else {
-            errorLabel.setText("Kullanici adi veya sifre yanlis.");
+            errorLabel.setText("Invalid username or password.");
             passwordField.setText("");
         }
     }
@@ -219,10 +233,10 @@ public class LoginFrame extends JFrame {
     private void openDashboardForRole(String role) {
         if (role == null) role = "ADMIN";
         switch (role) {
-            case "CUSTOMER"   -> new CustomerDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
-            case "AGENT"      -> new AgentDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
-            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
-            default           -> new DashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController).setVisible(true);
+            case "CUSTOMER"   -> new CustomerDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController, prrController).setVisible(true);
+            case "AGENT"      -> new AgentDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController, prrController).setVisible(true);
+            case "SUPERVISOR" -> new SupervisorDashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController, prrController).setVisible(true);
+            default           -> new DashboardFrame(authController, ticketController, userController, categoryController, departmentController, groupController, slaController, prrController).setVisible(true);
         }
     }
 }
